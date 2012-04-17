@@ -23,13 +23,13 @@
 
         <!-- Content Review dependencies -->
         <dependency>
-            <groupId>org.sakaiproject</groupId>
-            <artifactId>sakai-contentreview-model-api</artifactId>
+            <groupId>org.sakaiproject.contentreview</groupId>
+            <artifactId>contentreview-model-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.sakaiproject</groupId>
-            <artifactId>sakai-contentreview-service-api</artifactId>
+            <groupId>org.sakaiproject.contentreview</groupId>
+            <artifactId>contentreview-service-api</artifactId>
         </dependency>
 
         <dependency>
@@ -95,8 +95,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.sakaiproject</groupId>
-            <artifactId>sakai-scheduler-api</artifactId>
+            <groupId>org.sakaiproject.scheduler</groupId>
+            <artifactId>scheduler-api</artifactId>
         </dependency>
 
         <dependency>
@@ -105,17 +105,17 @@
         </dependency>
 
         <dependency>
-            <groupId>org.sakaiproject</groupId>
+            <groupId>org.sakaiproject.common</groupId>
             <artifactId>sakai-common-edu-person-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.sakaiproject</groupId>
+            <groupId>org.sakaiproject.common</groupId>
             <artifactId>sakai-common-manager-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.sakaiproject</groupId>
+            <groupId>org.sakaiproject.common</groupId>
             <artifactId>sakai-common-type-api</artifactId>
         </dependency>
 

@@ -23,6 +23,7 @@ package org.sakaiproject.contentreview.impl.hbm;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -282,6 +283,21 @@ public class BaseReviewServiceImpl implements ContentReviewService {
 	public void processQueue() {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public String getLocalizedStatusMessage(String arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public String getLocalizedStatusMessage(String arg0, String arg1) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public String getLocalizedStatusMessage(String arg0, Locale arg1) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	
