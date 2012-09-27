@@ -52,8 +52,15 @@
 
 	<bean
 		id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor"
-		class="org.sakaiproject.contentreview.impl.adivisors.DefaultSiteAdvisor">
-	</bean>
+		class="org.sakaiproject.contentreview.impl.adivisors.SiteToolAdvisor">
+
+        <property name="contentReviewTools">
+            <list>
+                <value>sakai.assignment2</value>
+                <value>sakai.assignment.grades</value>
+            </list>
+        </property>
+    </bean>
 
 	<!--  Uncomment this to use a site property to define which sites use c-r -->
 	<!--
