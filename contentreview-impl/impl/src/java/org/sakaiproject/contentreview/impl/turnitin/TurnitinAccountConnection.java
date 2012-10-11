@@ -77,6 +77,7 @@ public class TurnitinAccountConnection {
 	private boolean studentAccountNotified = true;
 	private boolean instructorAccountNotified = true;
 	private int sendSubmissionNotification = 0;
+	private boolean disableEmails;
 	private Long maxRetry = null;
                      private boolean useGrademark = false;
                      private boolean migrate = false;
@@ -191,6 +192,7 @@ public class TurnitinAccountConnection {
 		 */
 
 		turnitinConnTimeout = serverConfigurationService.getInt("turnitin.networkTimeout", 0);
+		disableEmails = serverConfigurationService.getBoolean("turnitin.disableEmails", false);
 
 	}
 
@@ -214,7 +216,8 @@ public class TurnitinAccountConnection {
 				"diagnostic", diagnostic,
 				"encrypt", encrypt,
 				"said", said,
-				"aid", aid
+				"aid", aid,
+				"dis", (disableEmails ?"1":"0")
 		);
 
 		if (useSourceParameter || migrate) {
