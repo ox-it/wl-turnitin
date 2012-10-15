@@ -1866,7 +1866,8 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 				}
 
 				Element root = document.getDocumentElement();
-				if (((CharacterData) (root.getElementsByTagName("rcode").item(0).getFirstChild())).getData().trim().compareTo("72") == 0) {
+				String rcode = ((CharacterData) (root.getElementsByTagName("rcode").item(0).getFirstChild())).getData().trim();
+				if ("72".equals(rcode)) {
 					log.debug("Report list returned successfully");
 
 					NodeList objects = root.getElementsByTagName("object");
@@ -1887,7 +1888,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 						log.debug("objectId: " + objectId + " similarity: " + similarityScore + " overlap: " + overlap);
 					}
 				} else {
-					log.debug("Report list request not successful");
+					log.debug("Report list request not successful: " + rcode);
 					log.debug(document.getTextContent());
 
 				}
