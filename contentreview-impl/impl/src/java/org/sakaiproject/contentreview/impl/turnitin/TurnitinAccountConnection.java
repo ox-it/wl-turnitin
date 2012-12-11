@@ -304,10 +304,8 @@ public class TurnitinAccountConnection {
 				else {
 					Set<String> instIds = getActiveInstructorIds(INST_ROLE,
 							site);
-					for(String instructorId:instIds){
-						inst = userDirectoryService.getUser(instructorId);
-						if(inst.getEmail() != null && inst.getFirstName() != null && inst.getLastName() != null)
-							break;
+					if (instIds.size() > 0) {
+						inst = userDirectoryService.getUser((String) instIds.toArray()[0]);
 					}
 				}
 			} catch (IdUnusedException e) {
@@ -339,7 +337,9 @@ public class TurnitinAccountConnection {
 		Set<String> ret =  new HashSet<String>();
 		for (int i = 0; i < activeUsers.size(); i++) {
 			User user = activeUsers.get(i);
-			ret.add(user.getId());
+			//Checks that the user has the required attributes to be a registered instructor.
+			if(user.getEmail() != null && user.getFirstName() != null && user.getLastName() != null)
+				ret.add(user.getId());
 		}
 
 		return ret;
