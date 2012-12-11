@@ -304,8 +304,10 @@ public class TurnitinAccountConnection {
 				else {
 					Set<String> instIds = getActiveInstructorIds(INST_ROLE,
 							site);
-					if (instIds.size() > 0) {
-						inst = userDirectoryService.getUser((String) instIds.toArray()[0]);
+					for(String instructorId:instIds){
+						inst = userDirectoryService.getUser(instructorId);
+						if(inst.getEmail() != null && inst.getFirstName() != null && inst.getLastName() != null)
+							break;
 					}
 				}
 			} catch (IdUnusedException e) {
