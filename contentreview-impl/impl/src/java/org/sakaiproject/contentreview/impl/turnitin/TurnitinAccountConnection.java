@@ -337,7 +337,9 @@ public class TurnitinAccountConnection {
 		Set<String> ret =  new HashSet<String>();
 		for (int i = 0; i < activeUsers.size(); i++) {
 			User user = activeUsers.get(i);
-			ret.add(user.getId());
+			//Checks that the user has the required attributes to be a registered instructor.
+			if(user.getEmail() != null && user.getFirstName() != null && user.getLastName() != null)
+				ret.add(user.getId());
 		}
 
 		return ret;
