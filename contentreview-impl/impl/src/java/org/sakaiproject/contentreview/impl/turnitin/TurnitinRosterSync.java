@@ -20,12 +20,7 @@
  **********************************************************************************/
 package org.sakaiproject.contentreview.impl.turnitin;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -350,22 +345,18 @@ public class TurnitinRosterSync {
 			throw new IllegalArgumentException("The Sakai Site with ID: " + sakaiSiteID + " does not exist.");
 		}
 
-                                            //Only run if using SRC 9
-                                            if(turnitinConn.isUseSourceParameter()){
-                                               //Enroll all instructors
-                                                Map<String,String> allInstructors = getAllUsers(sakaiSiteID,"instructor");
-                                                for (String key : allInstructors.keySet()) {
-                                                        try {
-                                                                addInstructor(sakaiSiteID,allInstructors.get(key));
-                                                        } catch (SubmissionException e) {
-                                                                log.error(e);
-                                                        } catch(TransientSubmissionException e){
-                                                                log.error(e);
-                                                        } catch(Exception e){
-                                                                log.error(e);
-                                                        }
-                                                }
-                                            }
+		//Only run if using SRC 9
+		if(turnitinConn.isUseSourceParameter()){
+			//Enroll all instructors
+			Map<String,String> allInstructors = getAllUsers(sakaiSiteID, "instructor");
+			for (String userId : allInstructors.values()) {
+				try {
+					addInstructor(sakaiSiteID, userId);
+				} catch(Exception e){
+					log.error("The instructor '" + userId + "' couldn't be added to the site '" + sakaiSiteID + "'", e);
+				}
+			}
+		}
 
 		for (String uid: enrollment.get("instructor")) {
 			if (!site.isAllowed(uid, "section.role.instructor")) {
