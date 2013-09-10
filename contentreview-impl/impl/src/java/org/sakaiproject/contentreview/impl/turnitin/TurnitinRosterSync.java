@@ -248,11 +248,11 @@ public class TurnitinRosterSync {
                                            String uem = turnitinReviewServiceImpl.getEmail(user);
                                            String uid = user.getId();
 		String ufn = user.getFirstName();
-		if (ufn == null) {
+		if (ufn == null || ufn.isEmpty()) {
 			throw new SubmissionException ("User has no first name");
 		}
 		String uln = user.getLastName();
-		if (uln == null) {
+		if (uln == null || uln.isEmpty()) {
 			throw new SubmissionException ("User has no last name");
 		}
 		String dis = (turnitinConn.isInstructorAccountNotified()) ? "0" : "1";
