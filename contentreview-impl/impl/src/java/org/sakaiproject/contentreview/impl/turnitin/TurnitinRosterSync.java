@@ -206,6 +206,10 @@ public class TurnitinRosterSync {
 			if (ret.containsKey("rcode") && ret.get("rcode").equals("93")) {
 				log.info("Successfully swapped roles for site: " + siteId + " user: " + user.getEid() + " oldRole: " + currentRole);
 				togo = true;
+			} else {
+				// Log the failure we might be getting.
+				log.error("Failed to swap roles for site: "+ siteId+ " user: "+ user.getEid()+ " rcode: "+
+						ret.get("rcode")+ " rmessage: "+ ret.get("rmessage"));
 			}
 		}
 		else {
@@ -243,11 +247,11 @@ public class TurnitinRosterSync {
                                            String uem = turnitinReviewServiceImpl.getEmail(user);
                                            String uid = user.getId();
 		String ufn = user.getFirstName();
-		if (ufn == null) {
+		if (ufn == null || ufn.isEmpty()) {
 			throw new SubmissionException ("User has no first name");
 		}
 		String uln = user.getLastName();
-		if (uln == null) {
+		if (uln == null || uln.isEmpty()) {
 			throw new SubmissionException ("User has no last name");
 		}
 		String dis = (turnitinConn.isInstructorAccountNotified()) ? "0" : "1";
