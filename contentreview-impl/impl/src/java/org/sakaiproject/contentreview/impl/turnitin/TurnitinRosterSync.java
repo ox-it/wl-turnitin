@@ -211,6 +211,10 @@ public class TurnitinRosterSync {
 			if (ret.containsKey("rcode") && ret.get("rcode").equals("93")) {
 				log.info("Successfully swapped roles for site: " + siteId + " user: " + user.getEid() + " oldRole: " + currentRole);
 				togo = true;
+			} else {
+				// Log the failure we might be getting.
+				log.error("Failed to swap roles for site: "+ siteId+ " user: "+ user.getEid()+ " rcode: "+
+						ret.get("rcode")+ " rmessage: "+ ret.get("rmessage"));
 			}
 		}
 		else {
