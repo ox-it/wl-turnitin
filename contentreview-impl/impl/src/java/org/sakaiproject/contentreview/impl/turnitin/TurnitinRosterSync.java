@@ -181,16 +181,19 @@ public class TurnitinRosterSync {
 	 */
 	public boolean swapTurnitinRoles(String siteId, User user, int currentRole ) {
 		boolean togo = false;
+		Map params = null;
 
-		if (user != null) {
-			// TODO We need to centralize packing user options since sometimes the
-			// email address may come from their Profile Tool profile
-			Map params = TurnitinAPIUtil.packMap(turnitinConn.getBaseTIIOptions(),
-					"fid","19","fcmd", "3", "uem", user.getEmail(), "uid", user.getId(),
-					"ufn", user.getFirstName(), "uln", user.getLastName(),
-					"username", user.getDisplayName(), "ctl", siteId, "cid", siteId,
+		try {
+			params = getUserMap(user);
+		} catch (SubmissionException e) {
+			// If we failed to get details of the users then we don't want to re-try again later.
+		}
+
+		if (user != null && params != null) {
+			params.putAll(TurnitinAPIUtil.packMap(turnitinConn.getBaseTIIOptions(),
+					"fid","19","fcmd", "3", "ctl", siteId, "cid", siteId,
 					"utp", currentRole+"",
-					"tem", turnitinConn.getInstructorInfo(siteId).get("uem"));
+					"tem", turnitinConn.getInstructorInfo(siteId).get("uem")));
 
 			Map ret = new HashMap();
 			try {
@@ -200,6 +203,7 @@ public class TurnitinRosterSync {
 			} catch (TransientSubmissionException e) {
 				log.error("Error syncing Turnitin site: " + siteId + " userid: " + user.getId(), e);
 			}
+
 
 			// A Successful return should look like:
 			// {rmessage=Successful!, rcode=93}
@@ -244,33 +248,22 @@ public class TurnitinRosterSync {
 		String fid = "2";
 		String utp = "2";
 		String cid = siteId;
-                                           String uem = turnitinReviewServiceImpl.getEmail(user);
-                                           String uid = user.getId();
-		String ufn = user.getFirstName();
-		if (ufn == null || ufn.isEmpty()) {
-			throw new SubmissionException ("User has no first name");
-		}
-		String uln = user.getLastName();
-		if (uln == null || uln.isEmpty()) {
-			throw new SubmissionException ("User has no last name");
-		}
+
 		String dis = (turnitinConn.isInstructorAccountNotified()) ? "0" : "1";
 
 		Document document = null;
 
-		Map params = TurnitinAPIUtil.packMap(turnitinConn.getBaseTIIOptions(),
-				"uid", uid,
+		Map params = getUserMap(user);
+
+	    params.putAll(TurnitinAPIUtil.packMap(turnitinConn.getBaseTIIOptions(),
 				"cid", cid,
 				"cpw", cpw,
 				"ctl", ctl,
 				"fcmd", fcmd,
 				"fid", fid,
-				"uem", uem,
-				"ufn", ufn,
-				"uln", uln,
 				"utp", utp,
 				"dis", dis
-		);
+		));
 		document = turnitinConn.callTurnitinReturnDocument(params);
 
 		Element root = document.getDocumentElement();
@@ -303,6 +296,35 @@ public class TurnitinRosterSync {
 			log.warn("Attemping to lookup user for Turnitn Sync that does not exist: " + userid, e);
 		}
 		return user;
+	}
+
+	/**
+	 * This creates a map for sending to TurnItIn based on the supplied user.
+	 * @param user The user to create a map for.
+	 * @return A Map containing the details of the user.
+	 * @throws SubmissionException If validation of any of the fields fails.
+	 */
+	public Map<String,String> getUserMap(User user) throws SubmissionException {
+		Map<String, String> userMap = new HashMap<String, String>();
+		String uem = turnitinReviewServiceImpl.getEmail(user);
+		String uid = user.getId();
+		String ufn = user.getFirstName();
+		if (ufn == null || ufn.isEmpty()) {
+			throw new SubmissionException ("User has no first name");
+		}
+		String uln = user.getLastName();
+		if (uln == null || uln.isEmpty()) {
+			throw new SubmissionException ("User has no last name");
+		}
+		if (uem == null || uem.length() < 5) {
+			throw new SubmissionException("User email must not be empty and must be more than 5 characters");
+		}
+		userMap.put("uid", uid);
+		userMap.put("uem", uem);
+		userMap.put("ufn", ufn);
+		userMap.put("uln", uln);
+
+		return userMap;
 	}
 
             /**
