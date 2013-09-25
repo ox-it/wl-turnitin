@@ -255,7 +255,7 @@ public class TurnitinRosterSync {
 
 		Map params = getUserMap(user);
 
-	    params.putAll(TurnitinAPIUtil.packMap(turnitinConn.getBaseTIIOptions(),
+		params.putAll(TurnitinAPIUtil.packMap(turnitinConn.getBaseTIIOptions(),
 				"cid", cid,
 				"cpw", cpw,
 				"ctl", ctl,
