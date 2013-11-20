@@ -20,6 +20,7 @@
  **********************************************************************************/
 package org.sakaiproject.contentreview.impl.turnitin;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.apache.commons.logging.Log;
@@ -453,10 +454,11 @@ public class TurnitinRosterSync {
 					item.setStatus(ContentReviewRosterSyncItem.FAILED_STATUS);
 					log.error("Unable to complete Turnitin Roster Sync for SyncItem id: "
 						+ item.getId() + " + siteid: " + item.getSiteId(), e);
-					StringBuilder sb = item.getMessages() == null ? new StringBuilder() : new StringBuilder(item.getMessages());
-					sb.append("\n"+item.getLastTried().toLocaleString()
-						+"Unable to complete Turnitin Roster Sync. See log for full stack trace\n");
-					sb.append(e.getMessage());
+					StringBuilder sb = new StringBuilder();
+					sb.append(new SimpleDateFormat().format(item.getLastTried()))
+						.append("\n")
+						.append("Unable to complete Turnitin Roster Sync. See log for full stack trace\n")
+						.append(e.getMessage());
 					item.setMessages(sb.toString());
 				} finally {
 					dao.update(item);
