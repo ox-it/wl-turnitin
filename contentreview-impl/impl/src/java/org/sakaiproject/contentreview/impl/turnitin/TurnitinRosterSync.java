@@ -305,6 +305,9 @@ public class TurnitinRosterSync {
 	 * @throws SubmissionException If validation of any of the fields fails.
 	 */
 	public Map<String,String> getUserMap(User user) throws SubmissionException {
+		if (user == null) {
+			throw new SubmissionException("Can't get details for null user");
+		}
 		Map<String, String> userMap = new HashMap<String, String>();
 		String uem = turnitinReviewServiceImpl.getEmail(user);
 		String uid = user.getId();
