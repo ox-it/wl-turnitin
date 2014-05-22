@@ -13,9 +13,10 @@
 	-->
 	<!-- for 2.6 based builds -->
 	<parent>
-		<artifactId>sakai-edu-tool</artifactId>
-		<groupId>org.sakaiproject.purepoms</groupId>
-		<version>2.8.1</version>
+		<artifactId>master</artifactId>
+		<groupId>org.sakaiproject</groupId>
+		<version>10-SNAPSHOT</version>
+		<relativePath>../../master/pom.xml</relativePath>
 	</parent>
 
 
@@ -49,35 +50,36 @@
 			<dependency>
 				<groupId>org.sakaiproject.contentreview</groupId>
 				<artifactId>contentreview-model-api</artifactId>
-				<version>2.9.1</version>
+				<version>${sakai.version}</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.sakaiproject.contentreview</groupId>
 				<artifactId>contentreview-service-api</artifactId>
-				<version>2.9.1</version>
+				<version>${sakai.version}</version>
+				<scope>provided</scope>
 			</dependency>
 			<!-- internal dependencies -->
 			<dependency>
 				<groupId>org.sakaiproject.contentreview</groupId>
 				<artifactId>sakai-contentreview-impl</artifactId>
-				<version>0.8-SNAPSHOT</version><!--turnitin.version-->
+				<version>${project.version}</version><!--turnitin.version-->
 			</dependency>
 			<dependency>
 				<groupId>org.sakaiproject.contentreview</groupId>
 				<artifactId>sakai-contentreview-hbm</artifactId>
-				<version>0.8-SNAPSHOT</version><!--turnitin.version-->
+				<version>${project.version}</version><!--turnitin.version-->
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.sakaiproject.contentreview</groupId>
 				<artifactId>contentreview-scheduler</artifactId>
-				<version>0.8-SNAPSHOT</version><!--turnitin.version-->
+				<version>${project.version}</version><!--turnitin.version-->
 			</dependency>
 			<dependency>
 				<groupId>org.sakaiproject.scheduler</groupId>
 				<artifactId>scheduler-api</artifactId>
-				<version>2.8.0</version>
+				<version>${sakai.version}</version>
 				<scope>provided</scope>
 			</dependency>
 			<!-- needed for 2.6 based builds -->
