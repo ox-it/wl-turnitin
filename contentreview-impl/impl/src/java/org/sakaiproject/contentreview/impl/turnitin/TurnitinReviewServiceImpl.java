@@ -837,7 +837,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 					ent.getClass().getMethod("getTitle").invoke(ent).toString();
 				log.debug("Got reflected assignemment title from entity " + title);
 				togo = URLDecoder.decode(title,"UTF-8");
-
+				togo=togo.replaceAll("\\W+","");
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
