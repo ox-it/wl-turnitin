@@ -154,9 +154,9 @@ public class TurnitinContentValidator {
 
         // for files like .png we'd like to get a status code from TII so we can display an error message
         // other than "An unknown error occurred"
-//      if (!fileTypeOk) {
-//          return false;
-//      }
+		if (!fileTypeOk) {
+			return false;
+		}
 
 		//TODO: if file is too big reject here 10.48576 MB
 
