@@ -5,4 +5,51 @@
 	  http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
   version="2.4">
 
+	<display-name>Content Review</display-name>
+	<description>Content Review Servlets</description>
+
+	<!-- Sakai request filter -->
+	<filter>
+		<filter-name>sakai.request</filter-name>
+		<filter-class>org.sakaiproject.util.RequestFilter</filter-class>
+		<!-- If you need to do uploads you will need this -->
+		<init-param>
+			<param-name>upload.enabled</param-name>
+			<param-value>false</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>sakai.request</filter-name>
+		<servlet-name>TIICallbackServlet</servlet-name>
+		<dispatcher>REQUEST</dispatcher>
+		<dispatcher>FORWARD</dispatcher>
+		<dispatcher>INCLUDE</dispatcher>
+	</filter-mapping>
+	
+	<!-- TII Servlet -->
+	<servlet>
+		<servlet-name>TIICallbackServlet</servlet-name>
+		<servlet-class>org.sakaiproject.contentreview.servlet.TIICallbackServlet</servlet-class>
+		<!-- use this to specify a starting page location if needed -->
+		<!--  
+		<init-param>
+			<param-name>main-page</param-name>
+			<param-value>/</param-value>
+		</init-param>
+		-->
+		<load-on-startup>2</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+    	<servlet-name>TIICallbackServlet</servlet-name>
+    	<url-pattern>/tii-servlet</url-pattern>
+  	</servlet-mapping>
+	
+	<!-- Sakai listeners -->
+	<!--<listener>
+		<listener-class>org.sakaiproject.util.ToolListener</listener-class>
+	</listener>-->
+	<listener>
+		<listener-class>org.sakaiproject.util.ContextLoaderListener</listener-class>
+	</listener>
+  
 </web-app>

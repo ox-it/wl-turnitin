@@ -102,22 +102,46 @@
             <artifactId>sakai-common-type-api</artifactId>
         </dependency>
 
+		<dependency>
+			<groupId>org.sakaiproject.basiclti</groupId>
+			<artifactId>basiclti-util</artifactId>
+			<!--<version>${sakai.basiclti.version}</version>-->
+			<version>10-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.sakaiproject.basiclti</groupId>
+			<artifactId>basiclti-api</artifactId>
+			<!--<version>${sakai.basiclti.version}</version>-->
+			<version>10-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+            <groupId>org.sakaiproject.assignment</groupId>
+            <artifactId>sakai-assignment-api</artifactId>
+        </dependency>
+		
         <!-- Apache commons dependencies -->
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
              <scope>provided</scope>
         </dependency>
-	<dependency>
-		<groupId>org.apache.poi</groupId>
-		<artifactId>poi</artifactId>
-		<version>3.8</version>
-	</dependency>
-	<dependency>
-		<groupId>org.apache.poi</groupId>
-		<artifactId>poi-scratchpad</artifactId>
-		<version>3.8</version>
-	</dependency>
+		<dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+        </dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.8</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-scratchpad</artifactId>
+			<version>3.8</version>
+		</dependency>
 
         <!-- PonderUtilCore for StreamUtils -->
         <dependency>

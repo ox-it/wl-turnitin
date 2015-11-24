@@ -1,4 +1,4 @@
-package org.sakaiproject.contentreview.impl.adivisors;
+package org.sakaiproject.contentreview.impl.advisors;
 
 import org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor;
 import org.sakaiproject.site.api.Site;
@@ -26,6 +26,13 @@ public class SiteToolAdvisor implements ContentReviewSiteAdvisor {
         return false;
     }
 
+	public boolean siteCanUseLTIReviewService(Site site) {
+        for(String toolId : contentReviewTools)
+            if(site.getToolForCommonId(toolId) != null)
+                return true;
+        return false;
+    }
+	
     public Collection<String> getContentReviewTools() {
         return contentReviewTools;
     }

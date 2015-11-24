@@ -35,14 +35,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.validator.EmailValidator;
+import org.imsglobal.basiclti.BasicLTIConstants;
 import org.sakaiproject.api.common.edu.person.SakaiPerson;
 import org.sakaiproject.api.common.edu.person.SakaiPersonManager;
+import org.sakaiproject.assignment.api.AssignmentContent;
+import org.sakaiproject.assignment.api.AssignmentContentEdit;
+import org.sakaiproject.assignment.api.AssignmentEdit;
+import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
@@ -63,12 +69,14 @@ import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
+import org.sakaiproject.entity.api.ResourcePropertiesEdit;
 import org.sakaiproject.entitybroker.EntityReference;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.exception.TypeException;
 import org.sakaiproject.genericdao.api.search.Restriction;
 import org.sakaiproject.genericdao.api.search.Search;
+import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.service.gradebook.shared.GradebookExternalAssessmentService;
 import org.sakaiproject.service.gradebook.shared.GradebookService;
 import org.sakaiproject.service.gradebook.shared.GradebookNotFoundException;
@@ -77,6 +85,7 @@ import org.sakaiproject.service.gradebook.shared.Assignment;
 import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.turnitin.util.TurnitinAPIUtil;
+import org.sakaiproject.turnitin.util.TurnitinLTIUtil;
 import org.sakaiproject.user.api.PreferencesService;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
@@ -177,6 +186,16 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 	private TurnitinContentValidator turnitinContentValidator;
 	public void setTurnitinContentValidator(TurnitinContentValidator turnitinContentValidator) {
 		this.turnitinContentValidator = turnitinContentValidator;
+	}
+	
+	private AssignmentService assignmentService;
+	public void setAssignmentService(AssignmentService assignmentService) {
+		this.assignmentService = assignmentService;
+	}
+	
+	private TurnitinLTIUtil tiiUtil;
+	public void setTiiUtil(TurnitinLTIUtil tiiUtil) {
+		this.tiiUtil = tiiUtil;
 	}
 
                private GradebookService gradebookService = (GradebookService)
@@ -906,6 +925,83 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 	@SuppressWarnings("unchecked")
 	public void createAssignment(String siteId, String taskId, Map extraAsnnOpts) throws SubmissionException, TransientSubmissionException {
 
+		Site s = null;
+		try {
+			s = siteService.getSite(siteId);
+		} catch (IdUnusedException iue) {
+			log.warn("createAssignment: Site not found!" + iue.getMessage());
+			return;
+		}
+		
+		//////////////////////////////  NEW LTI INTEGRATION  ///////////////////////////////
+		if(siteAdvisor.siteCanUseLTIReviewService(s)){
+		
+			Map<String,String> ltiProps = new HashMap<String,String> ();	
+			if (extraAsnnOpts == null){
+				log.warn("createAssignment: empty extraAsnnOpts");
+				return;
+			}
+			
+			ltiProps.put("context_id", siteId);
+			ltiProps.put("context_title", s.getTitle());
+			ltiProps.put("context_label", s.getShortDescription());
+			ltiProps.put("resource_link_id", taskId);
+			ltiProps.put("resource_link_title", extraAsnnOpts.get("title").toString());
+			String description = extraAsnnOpts.get("descr").toString();
+			if(description != null)
+				description = description.replaceAll("\\<.*?>","");//TODO improve this
+			ltiProps.put("resource_link_description", description);
+			ltiProps.put("custom_startdate", extraAsnnOpts.get("isostart").toString());//TODO take care of null values
+			ltiProps.put("custom_duedate", extraAsnnOpts.get("isodue").toString());
+			
+			Map instructorInfo = getInstructorInfo(siteId);
+			ltiProps.put("roles", "Instructor");
+			ltiProps.put("user_id", (String) instructorInfo.get("uid"));
+			ltiProps.put("lis_person_contact_email_primary", (String) instructorInfo.get("uem"));
+			ltiProps.put("lis_person_name_given", (String) instructorInfo.get("ufn"));
+			ltiProps.put("lis_person_name_family", (String) instructorInfo.get("uln"));
+			//TODO we can use the username param like name + lastname, but it might be empty
+			ltiProps.put("lis_person_name_full", (String) instructorInfo.get("ufn")  +  " " + (String) instructorInfo.get("uln"));
+			
+			boolean result = tiiUtil.makeLTIcall(tiiUtil.BASIC_ASSIGNMENT, null, ltiProps);
+			if(!result){
+				log.error("Error making LTI call");//TODO
+				return;
+			}
+			
+			Properties sakaiProps = new Properties();
+			String globalId = tiiUtil.getGlobalTurnitinLTIToolId();
+			sakaiProps.setProperty(LTIService.LTI_TOOL_ID,globalId);
+			
+			String custom = BasicLTIConstants.RESOURCE_LINK_ID + "=" + taskId;
+			custom += ";" + BasicLTIConstants.RESOURCE_LINK_TITLE + "=" + extraAsnnOpts.get("title").toString();
+			log.debug("Storing custom params: " + custom);
+			sakaiProps.setProperty(LTIService.LTI_CUSTOM,custom);
+			sakaiProps.setProperty(LTIService.LTI_SITE_ID,siteId);
+			Object ltiContent = tiiUtil.insertTIIToolContent(globalId, sakaiProps);
+			if(ltiContent == null){
+				log.error("createAssignment: Could not find LTI service.");
+				return;
+			} else if(!(ltiContent instanceof Long)){//TODO differenciate errors?
+				log.error("createAssignment: Error creating LTI stealthed tool: " + ltiContent);
+				return;
+			} else {//long if everything went fine
+				log.debug("LTI content tool id: " + ltiContent);
+				try{
+					AssignmentContentEdit ace = assignmentService.editAssignmentContent(taskId);
+					ResourcePropertiesEdit aPropertiesEdit = ace.getPropertiesEdit();
+					aPropertiesEdit.addProperty("lti_id", String.valueOf(ltiContent));
+					assignmentService.commitEdit(ace);
+				}catch(Exception e){
+					log.error("Could not store LTI tool ID " + ltiContent +" for assignment " + taskId);
+					log.error(e.getClass().getName() + " : " + e.getMessage());
+				}
+			}
+			return;
+		}
+		
+		//////////////////////////////  OLD API INTEGRATION  ///////////////////////////////
+	
 		//get the assignment reference
 		String taskTitle = getAssignmentTitle(taskId);
 		log.debug("Creating assignment for site: " + siteId + ", task: " + taskId +" tasktitle: " + taskTitle);
@@ -2422,5 +2518,29 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			return ((ContentReviewItem) matchingItems.iterator().next()).getLastError();
 		}
 		return getLocalizedStatusMessage(errorCode.toString());
+	}
+	
+	public String getLegacyReviewReportStudent(String contentId) throws QueueException, ReportException{
+		return getReviewReportStudent(contentId);
+	}
+	
+	public String getLegacyReviewReportInstructor(String contentId) throws QueueException, ReportException{
+		return getReviewReportStudent(contentId);
+	}
+	
+	public String getLTIAccess(String taskId, String contextId){
+		//TODO isSiteAcceptable? or checking done for each assignment in that tool?
+		String ltiUrl = null;
+		try{
+			org.sakaiproject.assignment.api.Assignment a = assignmentService.getAssignment(taskId);
+			AssignmentContent ac = a.getContent();
+			ResourceProperties aProperties = ac.getProperties();
+			String ltiId = aProperties.getProperty("lti_id");
+			ltiUrl = serverConfigurationService.getString("serverUrl") + "/access/basiclti/site/" + contextId + "/content:" + ltiId;
+			log.debug("getLTIAccess: " + ltiUrl);
+		} catch(Exception e){
+			log.warn("Exception while trying to get LTI access for task " + taskId + " and site " + contextId + ": " + e.getMessage());
+		}
+		return ltiUrl;
 	}
 }
