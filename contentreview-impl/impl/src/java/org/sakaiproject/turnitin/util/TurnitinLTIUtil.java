@@ -61,7 +61,8 @@ public class TurnitinLTIUtil {
 	public boolean makeLTIcall(int type, String urlParam, Map<String, String> ltiProps){
 		try {
 	        HttpClient client = new HttpClient();
-			Map<String,String> extra = new HashMap<String,String> ();
+			//Map<String,String> extra = new HashMap<String,String> ();
+			String extra = "";
 			
 			String defUrl = formUrl(type, urlParam);
 			if(defUrl == null){
@@ -70,7 +71,8 @@ public class TurnitinLTIUtil {
 			}
 			
 			PostMethod method = new PostMethod(defUrl);
-			ltiProps = BasicLTIUtil.signProperties(ltiProps, defUrl, "POST", said, secret, null, null, null, null, null, extra);
+			//ltiProps = BasicLTIUtil.signProperties(ltiProps, defUrl, "POST", said, secret, null, null, null, null, null, extra);
+			ltiProps = BasicLTIUtil.signProperties(ltiProps, defUrl, "POST", said, secret, null, null, null, null, extra);
 			if(ltiProps == null){
 				log.error("Error while signing TII LTI properties.");//TODO params
 				return false;

@@ -65,7 +65,7 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		this.userDirectoryService = userDirectoryService;
 	}
 	
-	private ContentReviewSiteAdvisor siteAdvisor;
+	protected ContentReviewSiteAdvisor siteAdvisor;
 	public void setSiteAdvisor(ContentReviewSiteAdvisor crsa) {
 		this.siteAdvisor = crsa;
 	}

@@ -80,6 +80,7 @@ import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.service.gradebook.shared.GradebookExternalAssessmentService;
 import org.sakaiproject.service.gradebook.shared.GradebookService;
 import org.sakaiproject.service.gradebook.shared.GradebookNotFoundException;
+import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.service.gradebook.shared.Assignment;
 import org.sakaiproject.tool.api.Session;
@@ -954,7 +955,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			ltiProps.put("custom_startdate", extraAsnnOpts.get("isostart").toString());//TODO take care of null values
 			ltiProps.put("custom_duedate", extraAsnnOpts.get("isodue").toString());
 			
-			Map instructorInfo = getInstructorInfo(siteId);
+			Map instructorInfo = turnitinConn.getInstructorInfo(siteId);
 			ltiProps.put("roles", "Instructor");
 			ltiProps.put("user_id", (String) instructorInfo.get("uid"));
 			ltiProps.put("lis_person_contact_email_primary", (String) instructorInfo.get("uem"));
