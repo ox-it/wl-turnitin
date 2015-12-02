@@ -49,7 +49,10 @@ public class TIICallbackServlet extends HttpServlet {
 		String contentType = request.getContentType();
 		if ( contentType != null && contentType.startsWith("application/json") ) {
 			doPostJSON(request, response);
-		} else M_log.warn("TIICallbackServlet received a not json call.");
+		} else {
+			M_log.warn("TIICallbackServlet received a not json call.");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -82,6 +85,7 @@ public class TIICallbackServlet extends HttpServlet {
 			AssignmentService.commitEdit(ae);
 		}catch(Exception e){
 			M_log.error("Could not find assignment " + assignmentId + " or store the TII assignment id.");
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 
         return;

@@ -7,11 +7,12 @@ import java.util.Properties;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.imsglobal.basiclti.BasicLTIUtil;
-import org.sakaiproject.component.cover.ServerConfigurationService;
+import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.lti.api.LTIService;
 
 /**
@@ -32,20 +33,26 @@ public class TurnitinLTIUtil {
 	public static final int RESUBMIT = 4;
 	public static final int INFO_SUBMISSION = 5;
 	
-	private static final String basicAssignmentUrl = "https://sandbox.turnitin.com/api/lti/1p0/assignment";
-	private static final String editAssignmentUrl = "https://sandbox.turnitin.com/api/lti/1p0/assignment/edit/";//assignment_id
-	private static final String infoAssignmentUrl = "https://sandbox.turnitin.com/api/lti/1p0/resource_link_tool/";//assignment_id
-	private static final String submitUrl = "https://sandbox.turnitin.com/api/lti/1p0/upload/submit/";//assignment_id
-	private static final String resubmitUrl = "https://sandbox.turnitin.com/api/lti/1p0/upload/resubmit/";//submission_id
-	private static final String infoSubmissionUrl = "https://sandbox.turnitin.com/api/lti/1p0/outcome_tool_data/";//submission_id
+	private static final String basicAssignmentUrl = "assignment";
+	private static final String editAssignmentUrl = "assignment/edit/";//assignment_id
+	private static final String infoAssignmentUrl = "resource_link_tool/";//assignment_id
+	private static final String submitUrl = "upload/submit/";//assignment_id
+	private static final String resubmitUrl = "upload/resubmit/";//submission_id
+	private static final String infoSubmissionUrl = "outcome_tool_data/";//submission_id
 	
 	private String said = null;
 	private String secret = null;
 	private String globalId = null;
+	private String endpoint = null;
 	
 	private LTIService ltiService;
 	public void setLtiService(LTIService ltiService) {
 		this.ltiService = ltiService;
+	}
+	
+	private ServerConfigurationService serverConfigurationService;
+	public void setServerConfigurationService(ServerConfigurationService serverConfigurationService) {
+		this.serverConfigurationService = serverConfigurationService;
 	}
 	
 	public void init() {
@@ -53,14 +60,19 @@ public class TurnitinLTIUtil {
 		if(ltiService == null)
 			log.warn("TurnitinLTIUtil: Could not find LTI service.");
 		
-		said = ServerConfigurationService.getString("turnitin.said");
-		secret = ServerConfigurationService.getString("turnitin.secretKey");
-		globalId = ServerConfigurationService.getString("turnitin.global.tool");
+		said = serverConfigurationService.getString("turnitin.said");
+		secret = serverConfigurationService.getString("turnitin.secretKey");
+		globalId = serverConfigurationService.getString("turnitin.global.tool");
+		endpoint = serverConfigurationService.getString("turnitin.ltiURL", "https://sandbox.turnitin.com/api/lti/1p0/");
 	}
 	
 	public boolean makeLTIcall(int type, String urlParam, Map<String, String> ltiProps){
 		try {
-	        HttpClient client = new HttpClient();
+	        HttpClientParams httpParams = new HttpClientParams();
+			httpParams.setConnectionManagerTimeout(60000);
+			HttpClient client = new HttpClient();
+			client.setParams(httpParams);			
+			
 			//Map<String,String> extra = new HashMap<String,String> ();
 			String extra = "";
 			
@@ -93,7 +105,6 @@ public class TurnitinLTIUtil {
 		
 		} catch (Exception e) {
 			log.error("Exception while making TII LTI call " + e.getMessage());//TODO addparams
-	        e.printStackTrace();
 			return false;
 	    }
 		
@@ -116,17 +127,17 @@ public class TurnitinLTIUtil {
 	private String formUrl(int type, String urlParam){
 		switch(type){
 			case BASIC_ASSIGNMENT:
-				return basicAssignmentUrl;
+				return endpoint+basicAssignmentUrl;
 			case EDIT_ASSIGNNMENT:
-				return editAssignmentUrl+urlParam;
+				return endpoint+editAssignmentUrl+urlParam;
 			case INFO_ASSIGNNMENT:
-				return infoAssignmentUrl+urlParam;
+				return endpoint+infoAssignmentUrl+urlParam;
 			case SUBMIT:
-				return submitUrl+urlParam;
+				return endpoint+submitUrl+urlParam;
 			case RESUBMIT:
-				return resubmitUrl+urlParam;
+				return endpoint+resubmitUrl+urlParam;
 			case INFO_SUBMISSION:
-				return infoSubmissionUrl+urlParam;
+				return endpoint+infoSubmissionUrl+urlParam;
 			default:
 				return null;
 		}

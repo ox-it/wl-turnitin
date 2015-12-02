@@ -2537,7 +2537,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			AssignmentContent ac = a.getContent();
 			ResourceProperties aProperties = ac.getProperties();
 			String ltiId = aProperties.getProperty("lti_id");
-			ltiUrl = serverConfigurationService.getString("serverUrl") + "/access/basiclti/site/" + contextId + "/content:" + ltiId;
+			ltiUrl = "/access/basiclti/site/" + contextId + "/content:" + ltiId;
 			log.debug("getLTIAccess: " + ltiUrl);
 		} catch(Exception e){
 			log.warn("Exception while trying to get LTI access for task " + taskId + " and site " + contextId + ": " + e.getMessage());

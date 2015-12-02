@@ -199,5 +199,6 @@
 			class="org.sakaiproject.turnitin.util.TurnitinLTIUtil"
 			init-method="init">
 		<property name="ltiService" ref="org.sakaiproject.lti.api.LTIService" />
+		<property name="serverConfigurationService" ref="org.sakaiproject.component.api.ServerConfigurationService" />
 	</bean>
 </beans>
