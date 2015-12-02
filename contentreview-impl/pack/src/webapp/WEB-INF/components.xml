@@ -52,7 +52,7 @@
 		<property name="assignmentService" ref="org.sakaiproject.assignment.api.AssignmentService" />
 	</bean>
 
-	<bean
+	<!--<bean
 		id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor"
 		class="org.sakaiproject.contentreview.impl.advisors.SiteToolAdvisor">
 
@@ -62,7 +62,7 @@
                 <value>sakai.assignment.grades</value>
             </list>
         </property>
-    </bean>
+    </bean>-->
 
 	<!--  Uncomment this to use a site property to define which sites use c-r -->
 	
