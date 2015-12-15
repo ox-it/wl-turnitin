@@ -1,5 +1,6 @@
 package org.sakaiproject.turnitin.util;
 
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +45,7 @@ public class TurnitinLTIUtil {
 	private String secret = null;
 	private String globalId = null;
 	private String endpoint = null;
+	private String turnitinSite = null;
 	
 	private LTIService ltiService;
 	public void setLtiService(LTIService ltiService) {
@@ -62,16 +64,18 @@ public class TurnitinLTIUtil {
 		
 		said = serverConfigurationService.getString("turnitin.said");
 		secret = serverConfigurationService.getString("turnitin.secretKey");
-		globalId = serverConfigurationService.getString("turnitin.global.tool");
-		endpoint = serverConfigurationService.getString("turnitin.ltiURL", "https://sandbox.turnitin.com/api/lti/1p0/");
+		endpoint = serverConfigurationService.getString("turnitin.ltiURL", "https://sandbox.turnitin.com/api/lti/1p0/");		
+		turnitinSite = serverConfigurationService.getString("turnitin.lti.site", "!turnitin");
 	}
 	
 	public boolean makeLTIcall(int type, String urlParam, Map<String, String> ltiProps){
 		try {
-	        HttpClientParams httpParams = new HttpClientParams();
+	        
+			HttpClientParams httpParams = new HttpClientParams();
 			httpParams.setConnectionManagerTimeout(60000);
 			HttpClient client = new HttpClient();
-			client.setParams(httpParams);			
+			client.setParams(httpParams);
+			client.getParams().setParameter("http.protocol.content-charset", "UTF-8");
 			
 			//Map<String,String> extra = new HashMap<String,String> ();
 			String extra = "";
@@ -97,11 +101,27 @@ public class TurnitinLTIUtil {
 					continue;
 				method.addParameter(key,value);
 			}
-			log.debug("ltiprops " + ltiProps.toString());
 			
 			int statusCode = client.executeMethod(method);//TODO process values
-			log.debug("status: " + statusCode + " - " + method.getStatusText());
-	        log.debug(method.getResponseBodyAsString());
+			if(statusCode == 400){
+				log.warn("Status 400: Bad request: " + defUrl);
+				log.warn("LTI props " + ltiProps.toString());
+				return false;
+			} else if(statusCode == 200){//OJO para el submit el estado correcto es 200
+				log.debug("Status 200: OK request: " + defUrl);
+				log.debug("LTI props " + ltiProps.toString());
+				log.debug(method.getResponseBodyAsString());
+				return true;
+			} else if(statusCode == 302){
+				log.debug("Successful call: " + defUrl);
+				log.debug("LTI props " + ltiProps.toString());
+				log.debug(method.getResponseBodyAsString());
+				return true;
+			} else {
+				log.warn("Not controlled status: " + statusCode + " - " + method.getStatusText());
+				log.debug("LTI props " + ltiProps.toString());
+				log.debug(method.getResponseBodyAsString());
+			}
 		
 		} catch (Exception e) {
 			log.error("Exception while making TII LTI call " + e.getMessage());//TODO addparams
@@ -112,7 +132,23 @@ public class TurnitinLTIUtil {
 	}
 	
 	public String getGlobalTurnitinLTIToolId(){
-		//TODO different way to generate or obtain it
+		if(globalId == null){
+			log.debug("Setting global TII LTI tool id");
+			List<Map<String, Object>> tools = ltiService.getToolsDao("lti_tools.site_id = '"+turnitinSite+"'", null, 0, 0, turnitinSite);
+			if ( tools == null || tools.size() < 1  || tools.size() > 1) {
+				if(tools == null)
+					log.warn("No tools found");
+				else
+					log.warn("Found: " + tools.size());				
+				log.error("getGlobalTurnitinLTIToolId: wrong global TII LTI tool configuration");
+				return null;
+			}
+			Map<String,Object> tool  = tools.get(0);
+			globalId = String.valueOf(tool.get(ltiService.LTI_ID));
+			log.debug("Global tool id: " + globalId);
+		}
+		//TODO we might as well make a resetglobalturnitinid method just in case?
+		
 		return globalId;
 	}
 	
@@ -121,7 +157,7 @@ public class TurnitinLTIUtil {
 			log.error("insertTIIToolContent: Could not find LTI service.");
 			return null;
 		}
-		return ltiService.insertTIIToolContent(null, globalToolId, props);
+		return ltiService.insertToolContent(null, globalToolId, props, "!admin");
 	}
 	
 	private String formUrl(int type, String urlParam){

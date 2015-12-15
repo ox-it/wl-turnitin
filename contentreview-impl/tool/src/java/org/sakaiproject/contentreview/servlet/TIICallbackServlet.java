@@ -13,8 +13,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 
-import org.sakaiproject.assignment.api.Assignment;
-import org.sakaiproject.assignment.api.AssignmentEdit;
+import org.sakaiproject.assignment.api.AssignmentContent;
+import org.sakaiproject.assignment.api.AssignmentContentEdit;
 import org.sakaiproject.assignment.cover.AssignmentService;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
 import org.sakaiproject.tool.api.Session;
@@ -79,7 +79,7 @@ public class TIICallbackServlet extends HttpServlet {
 		try{
 			Session session = SessionManager.getCurrentSession();
 			session.setUserId("admin");
-			AssignmentEdit ae = AssignmentService.editAssignment(assignmentId);
+			AssignmentContentEdit ae = AssignmentService.editAssignmentContent(assignmentId);
 			ResourcePropertiesEdit aPropertiesEdit = ae.getPropertiesEdit();
 			aPropertiesEdit.addProperty("turnitin_id", String.valueOf(tiiId));
 			AssignmentService.commitEdit(ae);

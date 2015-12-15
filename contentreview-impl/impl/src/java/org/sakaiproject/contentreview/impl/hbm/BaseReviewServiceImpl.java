@@ -110,6 +110,53 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
 				ContentReviewItem.NOT_SUBMITTED_CODE);
 		item.setNextRetryTime(new Date());
+		//TODO only when due
+		item.setLtiIntegration(true);
+		item.setUrlAccessed(false);
+		dao.save(item);
+	}
+	
+	public void queueContent(String userId, String siteId, String taskId, String contentId, String submissionId)
+		throws QueueException {
+	
+		log.debug("Method called queueContent(" + userId + "," + siteId + "," + contentId + ")");
+
+		if (userId == null) {
+			log.debug("Using current user");
+			userId = userDirectoryService.getCurrentUser().getId();
+		}
+
+		if (siteId == null) {
+			log.debug("Using current site");
+			siteId = toolManager.getCurrentPlacement().getContext();
+		}
+
+		if (taskId == null) {
+			log.debug("Generating default taskId");
+			taskId = siteId + " " + defaultAssignmentName;
+		}
+
+		log.debug("Adding content: " + contentId + " from site " + siteId
+					+ " and user: " + userId + " for task: " + taskId + " to submission queue");
+
+		/*
+		 * first check that this content has not been submitted before this may
+		 * not be the best way to do this - perhaps use contentId as the primary
+		 * key for now id is the primary key and so the database won't complain
+		 * if we put in repeats necessitating the check
+		 */
+
+		List<ContentReviewItem> existingItems = getItemsByContentId(contentId);
+		if (existingItems.size() > 0) {
+			throw new QueueException("Content " + contentId + " is already queued, not re-queued");
+		}
+		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
+			ContentReviewItem.NOT_SUBMITTED_CODE);
+		item.setNextRetryTime(new Date());
+		//TODO issiteacceptable
+		item.setLtiIntegration(true);
+		item.setUrlAccessed(false);
+		item.setSubmissionId(submissionId);
 		dao.save(item);
 	}
 
@@ -316,7 +363,29 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		
 	}
 
+	public ContentReviewItem getItemBySubmissionId(String submissionId){
+		Search search = new Search();
+		search.addRestriction(new Restriction("submissionId", submissionId));
+		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if(existingItems!=null)
+			return existingItems.get(0);//TODO with multiple submission this will be different
+		else return null;
+		//return existingItems;
+	}
 	
+	public boolean updateItemAccess(String submissionId){
+		Search search = new Search();
+		search.addRestriction(new Restriction("submissionId", submissionId));
+		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if(existingItems==null)
+			return false;
+		else {
+			ContentReviewItem thisItem = (ContentReviewItem) existingItems.get(0);
+			thisItem.setUrlAccessed(true);
+			dao.update(thisItem);
+		}
+		return true;
+	}
 
 
 	
