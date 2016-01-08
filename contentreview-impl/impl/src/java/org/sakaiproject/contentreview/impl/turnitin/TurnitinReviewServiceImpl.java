@@ -1013,9 +1013,9 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			}
 			
 			//adding callback url
-			String callbackUrl = serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool-tii/tii-servlet";
+			String callbackUrl = serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool/tii-servlet";
 			log.debug("callbackUrl: " + callbackUrl);
-			ltiProps.put("ext_resource_tool_placement_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool-tii/tii-servlet");
+			ltiProps.put("ext_resource_tool_placement_url", callbackUrl);
 			
 			boolean result = tiiUtil.makeLTIcall(tiiUtil.BASIC_ASSIGNMENT, null, ltiProps);
 			if(!result){
