@@ -62,7 +62,7 @@ public class TurnitinLTIUtil {
 		if(ltiService == null)
 			log.warn("TurnitinLTIUtil: Could not find LTI service.");
 		
-		said = serverConfigurationService.getString("turnitin.said");
+		said = serverConfigurationService.getString("turnitin.aid");
 		secret = serverConfigurationService.getString("turnitin.secretKey");
 		endpoint = serverConfigurationService.getString("turnitin.ltiURL", "https://sandbox.turnitin.com/api/lti/1p0/");		
 		turnitinSite = serverConfigurationService.getString("turnitin.lti.site", "!turnitin");
