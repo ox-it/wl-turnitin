@@ -26,8 +26,8 @@
         <property name="retryCount" type="long" not-null="false" />
         <property name="nextRetryTime" type="java.util.Date" not-null="false"/>
         <property name="errorCode" type="integer" not-null="false"/>
-		<property name="ltiIntegration" type="boolean" not-null="false"/>
 		<property name="urlAccessed" type="boolean" not-null="false"/>
 		<property name="submissionId" type="string" length="255" not-null="false" />
+		<property name="resubmission" type="boolean" not-null="false"/>
 	</class>
 </hibernate-mapping>

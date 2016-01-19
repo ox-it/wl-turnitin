@@ -33,6 +33,10 @@ public class SiteToolAdvisor implements ContentReviewSiteAdvisor {
         return false;
     }
 	
+	public boolean siteCanUseLTIDirectSubmission(Site site){
+		return false;
+	}
+	
     public Collection<String> getContentReviewTools() {
         return contentReviewTools;
     }

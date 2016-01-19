@@ -110,8 +110,6 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
 				ContentReviewItem.NOT_SUBMITTED_CODE);
 		item.setNextRetryTime(new Date());
-		//TODO only when due
-		item.setLtiIntegration(true);
 		item.setUrlAccessed(false);
 		dao.save(item);
 	}
@@ -153,10 +151,51 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
 			ContentReviewItem.NOT_SUBMITTED_CODE);
 		item.setNextRetryTime(new Date());
-		//TODO issiteacceptable
-		item.setLtiIntegration(true);
 		item.setUrlAccessed(false);
 		item.setSubmissionId(submissionId);
+		dao.save(item);
+	}
+	
+	public void queueResubContent(String userId, String siteId, String taskId, String contentId, String submissionId)
+		throws QueueException {
+	
+		log.debug("Method called queueContent(" + userId + "," + siteId + "," + contentId + ")");
+
+		if (userId == null) {
+			log.debug("Using current user");
+			userId = userDirectoryService.getCurrentUser().getId();
+		}
+
+		if (siteId == null) {
+			log.debug("Using current site");
+			siteId = toolManager.getCurrentPlacement().getContext();
+		}
+
+		if (taskId == null) {
+			log.debug("Generating default taskId");
+			taskId = siteId + " " + defaultAssignmentName;
+		}
+
+		log.debug("Adding content: " + contentId + " from site " + siteId
+					+ " and user: " + userId + " for task: " + taskId + " to submission queue");
+
+		/*
+		 * first check that this content has not been submitted before this may
+		 * not be the best way to do this - perhaps use contentId as the primary
+		 * key for now id is the primary key and so the database won't complain
+		 * if we put in repeats necessitating the check
+		 */
+
+		List<ContentReviewItem> existingItems = getItemsByContentId(contentId);
+		if (existingItems.size() > 0) {
+			throw new QueueException("Content " + contentId + " is already queued, not re-queued");
+		}
+		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
+			ContentReviewItem.NOT_SUBMITTED_CODE);
+		item.setNextRetryTime(new Date());
+		item.setUrlAccessed(false);
+		item.setSubmissionId(submissionId);
+		item.setResubmission(true);
 		dao.save(item);
 	}
 
@@ -363,23 +402,33 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		
 	}
 
-	public ContentReviewItem getItemBySubmissionId(String submissionId){
+	public ContentReviewItem getItemBySubmissionId(String submissionId, String contentId){
+		log.debug("getItemBySubmissionId " + submissionId);
 		Search search = new Search();
 		search.addRestriction(new Restriction("submissionId", submissionId));
-		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
-		if(existingItems!=null)
-			return existingItems.get(0);//TODO with multiple submission this will be different
-		else return null;
+		search.addRestriction(new Restriction("contentId", contentId));
+		try{
+			List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+			if(existingItems!=null){
+				if(existingItems.size() > 1){ log.debug("There's more than one critem"); }
+				return existingItems.get(0);//TODO with multiple submission this might be different, look at sakai11/vericite
+			}
+		} catch(Exception e){
+			log.warn("Item not found");//debug?
+		}
+		return null;
 		//return existingItems;
 	}
 	
-	public boolean updateItemAccess(String submissionId){
+	public boolean updateItemAccess(String submissionId, String contentId){
 		Search search = new Search();
 		search.addRestriction(new Restriction("submissionId", submissionId));
+		search.addRestriction(new Restriction("contentId", contentId));
 		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
-		if(existingItems==null)
+		if(existingItems==null){
 			return false;
-		else {
+		} else {
+			if(existingItems.size() > 1){ log.debug("There's more than one critem"); }
 			ContentReviewItem thisItem = (ContentReviewItem) existingItems.get(0);
 			thisItem.setUrlAccessed(true);
 			dao.update(thisItem);

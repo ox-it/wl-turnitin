@@ -49,6 +49,7 @@ import org.sakaiproject.assignment.api.AssignmentContent;
 import org.sakaiproject.assignment.api.AssignmentContentEdit;
 import org.sakaiproject.assignment.api.AssignmentEdit;
 import org.sakaiproject.assignment.api.AssignmentService;
+import org.sakaiproject.assignment.api.AssignmentSubmission;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
@@ -251,7 +252,20 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 
 	}
 
-
+	public boolean isDirectAccess(Site s) {
+		if (s == null) {
+			return false;
+		}
+ 
+		log.debug("isDirectAccess: " + s.getId() + " / " + s.getTitle());
+ 
+		// Delegated to another bean
+		if (siteAdvisor != null && siteAdvisor.siteCanUseReviewService(s) && siteAdvisor.siteCanUseLTIReviewService(s) && siteAdvisor.siteCanUseLTIDirectSubmission(s)) {
+			return true;
+		}
+		
+		return false;
+	}
 
 
 	/**
@@ -365,10 +379,32 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 	public String getReviewReport(String contentId)
 	throws QueueException, ReportException {
 
-		// first retrieve the record from the database to get the externalId of
+		/*// first retrieve the record from the database to get the externalId of
 		// the content
 		log.warn("Deprecated Methog getReviewReport(String contentId) called");
-		return this.getReviewReportInstructor(contentId);
+		return this.getReviewReportInstructor(contentId);*/
+		
+		log.debug("getReviewReport for LTI integration");
+		//should have already checked lti integration on assignments tool
+		Search search = new Search();
+		search.addRestriction(new Restriction("contentId", contentId));
+		List<ContentReviewItem> matchingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if (matchingItems.size() == 0) {
+			log.debug("Content " + contentId + " has not been queued previously");
+			throw new QueueException("Content " + contentId + " has not been queued previously");
+		}
+
+		if (matchingItems.size() > 1)
+			log.debug("More than one matching item found - using first item found");
+
+		// check that the report is available
+		ContentReviewItem item = (ContentReviewItem) matchingItems.iterator().next();
+		if (item.getStatus().compareTo(ContentReviewItem.SUBMITTED_REPORT_AVAILABLE_CODE) != 0) {
+			log.debug("Report not available: " + item.getStatus());
+			throw new ReportException("Report not available: " + item.getStatus());
+		}
+		
+		return getLTIAccess(item.getTaskId(), item.getSiteId());
 	}
 
 private List<ContentReviewItem> getItemsByContentId(String contentId) {
@@ -411,6 +447,20 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
             }catch(Exception e){
                 log.error("(getReviewScore)"+e);
             }
+			
+			Site s = null;
+			try {
+				s = siteService.getSite(item.getSiteId());
+				
+				//////////////////////////////  NEW LTI INTEGRATION  ///////////////////////////////
+				if(siteAdvisor.siteCanUseLTIReviewService(s)){			
+					log.debug("getReviewScore using the LTI integration");			
+					return item.getReviewScore().intValue();
+				}
+				//////////////////////////////  OLD API INTEGRATION  ///////////////////////////////
+			} catch (IdUnusedException iue) {
+				log.warn("createAssignment: Site " + item.getSiteId() + " not found!" + iue.getMessage());
+			}
 
             String[] assignData = null;
             try{
@@ -930,12 +980,13 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 		try {
 			s = siteService.getSite(siteId);
 		} catch (IdUnusedException iue) {
-			log.warn("createAssignment: Site not found!" + iue.getMessage());
+			log.warn("createAssignment: Site " + siteId + " not found!" + iue.getMessage());
 			return;
 		}
 		
 		//////////////////////////////  NEW LTI INTEGRATION  ///////////////////////////////
 		if(siteAdvisor.siteCanUseLTIReviewService(s)){
+			log.debug("Creating new TII assignment using the LTI integration");
 		
 			//check if it was already created
 			String tiiId = null;
@@ -945,7 +996,6 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 				ResourceProperties aProperties = ac.getProperties();
 				tiiId = aProperties.getProperty("turnitin_id");
 				log.debug("This assignment has associated the following TII id: " + tiiId);				
-				aProperties = ac.getProperties();
 				ltiId = aProperties.getProperty("lti_id");
 				log.debug("This assignment has associated the following LTI id: " + ltiId);
 			} catch (Exception e) {
@@ -969,6 +1019,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			ltiProps.put("resource_link_description", description);
 			ltiProps.put("custom_startdate", extraAsnnOpts.get("isostart").toString());//TODO take care of null values
 			ltiProps.put("custom_duedate", extraAsnnOpts.get("isodue").toString());
+			ltiProps.put("custom_feedbackreleasedate", extraAsnnOpts.get("isodue").toString());
 			
 			Map instructorInfo = turnitinConn.getInstructorInfo(siteId);
 			ltiProps.put("roles", "Instructor");
@@ -982,8 +1033,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			ltiProps.put("custom_maxpoints", extraAsnnOpts.get("points").toString());
 	        ltiProps.put("custom_studentpapercheck", extraAsnnOpts.get("s_paper_check").toString());
 	        ltiProps.put("custom_journalcheck",extraAsnnOpts.get("journal_check").toString());
-
-	        //TODO decide ltiProps.setProperty("custom_feedbackreleasedate","2015-12-24T19:03:27Z");    	
+	
 	        ltiProps.put("custom_internetcheck", extraAsnnOpts.get("internet_check").toString());
 	        ltiProps.put("custom_institutioncheck",extraAsnnOpts.get("institution_check").toString());
 			ltiProps.put("custom_allow_non_or_submissions", extraAsnnOpts.get("allow_any_file").toString());
@@ -1017,9 +1067,9 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			log.debug("callbackUrl: " + callbackUrl);
 			ltiProps.put("ext_resource_tool_placement_url", callbackUrl);
 			
-			boolean result = tiiUtil.makeLTIcall(tiiUtil.BASIC_ASSIGNMENT, null, ltiProps);
-			if(!result){
-				log.error("Error making LTI call");//TODO
+			int result = tiiUtil.makeLTIcall(tiiUtil.BASIC_ASSIGNMENT, null, ltiProps);
+			if(result < 0){
+				log.error("Error making LTI call");//TODO parse errors
 				return;
 			}
 			
@@ -1027,6 +1077,10 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			if(tiiId == null || ltiId == null){
 				Properties sakaiProps = new Properties();
 				String globalId = tiiUtil.getGlobalTurnitinLTIToolId();
+				if(globalId==null){
+					log.error("TII LTI global id not set");
+					return;
+				}
 				sakaiProps.setProperty(LTIService.LTI_TOOL_ID,globalId);
 				
 				String custom = BasicLTIConstants.RESOURCE_LINK_ID + "=" + taskId;
@@ -1041,14 +1095,14 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 					securityService.pushAdvisor(advisor);
 					ltiContent = tiiUtil.insertTIIToolContent(globalId, sakaiProps);
 				} catch(Exception e){
-					log.error("createAssignment - insertTIIToolContent: Could not push the security advisor.");
+					log.error("createAssignment - insertTIIToolContent: error trying to insert TII tool content: " + e.getMessage());
 					return;
 				} finally {
 					securityService.popAdvisor(advisor);
 				}				
 				
 				if(ltiContent == null){
-					log.error("createAssignment: Could not find LTI service.");
+					log.error("createAssignment: Could not create LTI tool for the task: " + custom);
 					return;
 				} else if(!(ltiContent instanceof Long)){//TODO differenciate errors?
 					log.error("createAssignment: Error creating LTI stealthed tool: " + ltiContent);
@@ -1067,9 +1121,40 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 				}
 			}
 			
-			//TODO add submissions to the queue if there is any
-				//check they weren't already added
-				//danger - adding and removing several times
+			//add submissions to the queue if there is any
+			try{
+				log.debug("Adding previous submissions");
+				//this will be done always - no problem, extra checks
+				Iterator it = assignmentService.getAssignments(assignmentService.getAssignmentContent(taskId));
+				org.sakaiproject.assignment.api.Assignment a = null;
+				while(it.hasNext()){
+					a = (org.sakaiproject.assignment.api.Assignment) it.next();
+					break;
+				}
+				if(a == null) return;
+				log.debug("Assignment " + a.getId() + " - " + a.getTitle());
+				List<AssignmentSubmission> submissions = assignmentService.getSubmissions(a);
+				if(submissions != null){
+					for(AssignmentSubmission sub : submissions){
+						//if submitted
+						if(sub.getSubmitted()){
+							log.debug("Submission " + sub.getId());
+							boolean allowAnyFile = a.getContent().isAllowAnyFile();
+							String contentId = getFirstAcceptableAttachement(sub,allowAnyFile);
+							//if it wasnt added
+							if(getItemBySubmissionId(sub.getId(),contentId)==null){
+								log.debug("was not added");								
+								//we might need cr to get the status
+								//ContentResource cr = getFirstAcceptableAttachement(allowAnyFile);
+								queueContent(sub.getSubmitterId(), null, a.getReference(), contentId, sub.getId());
+							}
+							//else - is there anything or any status we should check?
+						}
+					}
+				}	
+			} catch(Exception e){
+				log.warn("Error while tying to queue previous submissions.");
+			}
 			
 			return;
 		}
@@ -1535,9 +1620,18 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 				errors++;
 				continue;
 			}
+			
+			Site s = null;
+			try {
+				s = siteService.getSite(currentItem.getSiteId());
+			}
+			catch (IdUnusedException iue) {
+				log.warn("processQueue: Site " + currentItem.getSiteId() + " not found!" + iue.getMessage());
+				return;
+			}
 
 			//////////////////////////////  NEW LTI INTEGRATION  ///////////////////////////////
-			if(currentItem.isLtiIntegration()){
+			if(siteAdvisor.siteCanUseLTIReviewService(s) && currentItem.getSubmissionId()!=null){
 				
 				Map<String,String> ltiProps = new HashMap<String,String> ();	
 				ltiProps.put("context_id", currentItem.getSiteId());
@@ -1602,7 +1696,10 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 				ltiProps.put("custom_submission_url", httpAccess);
 				ltiProps.put("custom_submission_title", fileName);
 				ltiProps.put("custom_submission_filename", fileName);
-				ltiProps.put("custom_xmlresponse","1");//mandatatory
+				ltiProps.put("ext_outcomes_tool_placement_url", "http://sakaitii.entornosdeformacion.com/sakai-contentreview-tool/submission-servlet");
+				//use lis_outcome_service_url for storing grades?
+				ltiProps.put("lis_result_sourcedid", currentItem.getSubmissionId());//or currentItem.getContentId()
+				ltiProps.put("custom_xmlresponse","1");//mandatory
 				//TODO params for callbacks y processing resubmission?
 				
 				String tiiId = null;
@@ -1639,14 +1736,32 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 					continue;
 				}
 				
-				boolean result = tiiUtil.makeLTIcall(tiiUtil.SUBMIT, tiiId, ltiProps);
-				if(!result){
-					log.error("Error making LTI call");//TODO no status for the moment so it will run again
-					//errors++;
-					return;
+				int result = -1;
+				if(currentItem.isResubmission()){//TODO errors, releaselock, daoupdate...
+					log.debug("It's a resubmission");
+					//check we have TII id
+					AssignmentSubmission as = null;
+					try{
+						as = assignmentService.getSubmission(currentItem.getSubmissionId());						
+						ResourceProperties aProperties = as.getProperties();
+						String tiiPaperId = aProperties.getProperty("turnitin_id");
+						log.debug("This assignment has associated the following TII id: " + tiiPaperId);	
+						if(tiiPaperId != null){
+							result = tiiUtil.makeLTIcall(tiiUtil.RESUBMIT, tiiPaperId, ltiProps);
+						} else {//normal submission?
+							log.debug("doing a submission instead");
+							result = tiiUtil.makeLTIcall(tiiUtil.SUBMIT, tiiId, ltiProps);
+						}
+					} catch(IdUnusedException e){
+						log.error("Could not get submission by id " + currentItem.getSubmissionId() + " " + e.getMessage());
+					} catch(PermissionException e){
+						log.error("User doesn't have permission to access submission " + currentItem.getSubmissionId() + " " + e.getMessage());
+					}
+				} else {
+					result = tiiUtil.makeLTIcall(tiiUtil.SUBMIT, tiiId, ltiProps);
 				}
 				
-				if(result){
+				if(result >= 0){
 					log.debug("LTI submission successful");
 					//TODO on callback
 					//currentItem.setExternalId(externalId);
@@ -1931,7 +2046,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 	}
 
 	public String escapeFileName(String fileName, String contentId) {
-		log.debug("origional filename is: " + fileName);
+		log.debug("original filename is: " + fileName);
 		if (fileName == null) {
 			//use the id
 			fileName  = contentId;
@@ -2055,6 +2170,68 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 				//dao.update(currentItem);
 			}
 
+			Site s = null;
+			try {
+				s = siteService.getSite(currentItem.getSiteId());
+			}
+			catch (IdUnusedException iue) {
+				log.warn("checkForReportsBulk: Site " + currentItem.getSiteId() + " not found!" + iue.getMessage());
+				continue;
+			}
+			//////////////////////////////  NEW LTI INTEGRATION  ///////////////////////////////
+			if(siteAdvisor.siteCanUseLTIReviewService(s)){			
+				log.debug("getReviewScore using the LTI integration");			
+				
+				Map<String,String> ltiProps = new HashMap<String,String> ();						
+				Map instructorInfo = turnitinConn.getInstructorInfo(currentItem.getSiteId());
+				ltiProps.put("roles", "Instructor");
+				ltiProps.put("user_id", (String) instructorInfo.get("uid"));
+				ltiProps.put("lis_person_contact_email_primary", (String) instructorInfo.get("uem"));
+				ltiProps.put("lis_person_name_given", (String) instructorInfo.get("ufn"));
+				ltiProps.put("lis_person_name_family", (String) instructorInfo.get("uln"));
+				ltiProps.put("lis_person_name_full", (String) instructorInfo.get("ufn")  +  " " + (String) instructorInfo.get("uln"));
+				
+				AssignmentSubmission as = null;
+				try{
+					as = assignmentService.getSubmission(currentItem.getSubmissionId());
+				} catch(Exception ex){
+					log.warn("Could not get submission by id " + currentItem.getSubmissionId() + " " + ex.getMessage());
+					continue;
+				}
+				ResourceProperties rp = as.getProperties();
+				String paperId = rp.getProperty("turnitin_id");//OJO esto se puede guardar como external id en el contentreview...
+				if(paperId == null){
+					log.warn("Could not find TII paper id for the submission " + currentItem.getSubmissionId());
+					continue;
+				}
+				//TODO update status, dao.update, increment count... for the previous continue cases
+				
+				int result = tiiUtil.makeLTIcall(tiiUtil.INFO_SUBMISSION, paperId, ltiProps);
+				if(result >= 0){
+					currentItem.setReviewScore(result);
+					currentItem.setStatus(ContentReviewItem.SUBMITTED_REPORT_AVAILABLE_CODE);
+					currentItem.setDateReportReceived(new Date());
+					dao.update(currentItem);
+					//log.debug("new report received: " + currentItem.getExternalId() + " -> " + currentItem.getReviewScore());
+					log.debug("new report received: " + paperId + " -> " + currentItem.getReviewScore());
+				} else {
+					log.error("Error making LTI call");
+					if(result == -7){
+						currentItem.setStatus(ContentReviewItem.SUBMITTED_AWAITING_REPORT_CODE);
+						currentItem.setLastError(null);
+						currentItem.setErrorCode(null);
+					} else {
+						//TODO specify error type
+						currentItem.setStatus(ContentReviewItem.REPORT_ERROR_RETRY_CODE);
+						currentItem.setLastError("tiiUtil error " + result);
+					}
+					dao.update(currentItem);
+				}
+				
+				continue;
+			}
+			//////////////////////////////  OLD API INTEGRATION  ///////////////////////////////
+			
 			if (currentItem.getExternalId() == null || currentItem.getExternalId().equals("")) {
 				currentItem.setStatus(Long.valueOf(4));
 				dao.update(currentItem);
@@ -2754,6 +2931,23 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			log.warn("Exception while trying to get LTI access for task " + taskId + " and site " + contextId + ": " + e.getMessage());
 		}
 		return ltiUrl;
+	}
+	
+	private String getFirstAcceptableAttachement(AssignmentSubmission sub, boolean allowAnyFile) {		
+		try {
+			List attachments = sub.getSubmittedAttachments();
+			for( int i =0; i < attachments.size();i++ ) {
+				Reference ref = (Reference)attachments.get(i);
+				ContentResource contentResource = (ContentResource)ref.getEntity();
+				if (allowAnyFile || isAcceptableContent(contentResource)) {
+					return contentResource.getId();
+				}
+			}
+		}
+		catch (Exception e) {
+			log.warn("TII:getFirstAcceptableAttachment() " + e.getMessage());
+		}
+		return null;
 	}
 	
 	/**

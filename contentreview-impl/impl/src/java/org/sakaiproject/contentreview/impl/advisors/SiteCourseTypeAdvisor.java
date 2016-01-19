@@ -46,5 +46,9 @@ public class SiteCourseTypeAdvisor implements ContentReviewSiteAdvisor {
 		return false;
 		
 	}
+	
+	public boolean siteCanUseLTIDirectSubmission(Site site) {
+		return false;		
+	}
 
 }

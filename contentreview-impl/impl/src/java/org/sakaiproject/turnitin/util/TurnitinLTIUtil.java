@@ -1,10 +1,19 @@
 package org.sakaiproject.turnitin.util;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -47,6 +56,8 @@ public class TurnitinLTIUtil {
 	private String endpoint = null;
 	private String turnitinSite = null;
 	
+	private String SUCCESS_TEXT = "fullsuccess";
+	
 	private LTIService ltiService;
 	public void setLtiService(LTIService ltiService) {
 		this.ltiService = ltiService;
@@ -59,16 +70,20 @@ public class TurnitinLTIUtil {
 	
 	public void init() {
 		log.debug("init - TurnitinLTIUtil");
-		if(ltiService == null)
+		if(ltiService == null){
 			log.warn("TurnitinLTIUtil: Could not find LTI service.");
+		}
 		
 		said = serverConfigurationService.getString("turnitin.aid");
 		secret = serverConfigurationService.getString("turnitin.secretKey");
+		if(said == null || secret == null){
+			log.warn("TurnitinLTIUtil: TII basic configuration is not set.");
+		}			
 		endpoint = serverConfigurationService.getString("turnitin.ltiURL", "https://sandbox.turnitin.com/api/lti/1p0/");		
 		turnitinSite = serverConfigurationService.getString("turnitin.lti.site", "!turnitin");
 	}
 	
-	public boolean makeLTIcall(int type, String urlParam, Map<String, String> ltiProps){
+	public int makeLTIcall(int type, String urlParam, Map<String, String> ltiProps){
 		try {
 	        
 			HttpClientParams httpParams = new HttpClientParams();
@@ -82,16 +97,16 @@ public class TurnitinLTIUtil {
 			
 			String defUrl = formUrl(type, urlParam);
 			if(defUrl == null){
-				log.error("Error while getting TII LTI url.");//TODO params
-				return false;
+				log.error("makeLTIcall: type " + type + " is not correct");
+				return -1;
 			}
 			
 			PostMethod method = new PostMethod(defUrl);
 			//ltiProps = BasicLTIUtil.signProperties(ltiProps, defUrl, "POST", said, secret, null, null, null, null, null, extra);
-			ltiProps = BasicLTIUtil.signProperties(ltiProps, defUrl, "POST", said, secret, null, null, null, null, extra);
+ 			ltiProps = BasicLTIUtil.signProperties(ltiProps, defUrl, "POST", said, secret, null, null, null, null, extra);
 			if(ltiProps == null){
-				log.error("Error while signing TII LTI properties.");//TODO params
-				return false;
+				log.error("Error while signing TII LTI properties.");
+				return -2;
 			}
 			
 			for (Entry<String, String> entry : ltiProps.entrySet()) {
@@ -102,21 +117,47 @@ public class TurnitinLTIUtil {
 				method.addParameter(key,value);
 			}
 			
-			int statusCode = client.executeMethod(method);//TODO process values
+			int statusCode = client.executeMethod(method);
 			if(statusCode == 400){
 				log.warn("Status 400: Bad request: " + defUrl);
 				log.warn("LTI props " + ltiProps.toString());
-				return false;
-			} else if(statusCode == 200){//OJO para el submit el estado correcto es 200
+				return -3;
+			} else if(statusCode == 200){
 				log.debug("Status 200: OK request: " + defUrl);
 				log.debug("LTI props " + ltiProps.toString());
 				log.debug(method.getResponseBodyAsString());
-				return true;
+				if(type == SUBMIT || type == RESUBMIT){
+					boolean result = parseSubmissionXMLResponse(method.getResponseBodyAsString());
+					if(!result){
+						log.warn("Error while submitting. LTI props " + ltiProps.toString());
+						return -6;
+					}
+					return 1;
+				} else if(type == INFO_SUBMISSION){
+					//move this?
+					String jsonResponse = method.getResponseBodyAsString();
+					JSONObject json = new JSONObject(jsonResponse);
+					JSONObject originality = json.getJSONObject("outcome_originalityreport");
+					log.debug("Originality data: " + originality.toString());
+					String text = originality.getString("text");//null when no reports set on turniting, catch?
+					log.debug("Originality text value: " + text);
+					if(text != null && text.equals("Pending")){
+						return -7;
+					}
+					JSONObject numeric = originality.getJSONObject("numeric");
+					int score = numeric.getInt("score");
+					log.debug("Originality score value: " + score);
+					if(score > 0){//show log
+						JSONObject breakdown = originality.getJSONObject("breakdown");
+						log.debug("Breakdown originality values: " + breakdown.toString());//TODO when should this be showed?
+					}
+					return score;
+				}
 			} else if(statusCode == 302){
 				log.debug("Successful call: " + defUrl);
 				log.debug("LTI props " + ltiProps.toString());
 				log.debug(method.getResponseBodyAsString());
-				return true;
+				return 1;
 			} else {
 				log.warn("Not controlled status: " + statusCode + " - " + method.getStatusText());
 				log.debug("LTI props " + ltiProps.toString());
@@ -124,11 +165,11 @@ public class TurnitinLTIUtil {
 			}
 		
 		} catch (Exception e) {
-			log.error("Exception while making TII LTI call " + e.getMessage());//TODO addparams
-			return false;
+			log.error("Exception while making TII LTI call " + e.getMessage());
+			return -4;
 	    }
 		
-		return true;//TODO
+		return -5;
 	}
 	
 	public String getGlobalTurnitinLTIToolId(){
@@ -177,6 +218,27 @@ public class TurnitinLTIUtil {
 			default:
 				return null;
 		}
+	}
+	
+	private boolean parseSubmissionXMLResponse(String xml){
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        try{
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document document = builder.parse(new InputSource(new StringReader(xml)));
+			Element doc = document.getDocumentElement();
+			String status = doc.getElementsByTagName("status").item(0).getChildNodes().item(0).getNodeValue();
+			if(status.equals(SUCCESS_TEXT)){
+				String tiiSubmissionId = doc.getElementsByTagName("lis_result_sourcedid").item(0).getChildNodes().item(0).getNodeValue();
+				log.debug("TII submission id: " + tiiSubmissionId);
+			} else {
+				String errorMessage = doc.getElementsByTagName("message").item(0).getChildNodes().item(0).getNodeValue();
+				log.error("Error when submitting to TII: " + errorMessage);//TODO return the error and store it?
+			}
+		} catch(Exception ee){
+			log.error("Could not parse TII response: " + ee.getMessage());
+			return false;
+		}
+		return true;
 	}
 	
 }

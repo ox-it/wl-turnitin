@@ -36,6 +36,11 @@ public class SitePropertyAdvisor implements ContentReviewSiteAdvisor {
 		siteLTIProperty = p;
 	}
 	
+	private String siteDirectSubmissionProperty;
+	public void setSiteDirectSubmissionProperty(String p){
+		siteDirectSubmissionProperty = p;
+	}
+	
 	public boolean siteCanUseReviewService(Site site) {
 		
 		ResourceProperties properties = site.getProperties();
@@ -53,6 +58,17 @@ public class SitePropertyAdvisor implements ContentReviewSiteAdvisor {
 		ResourceProperties properties = site.getProperties();
 		
 		String prop = (String) properties.get(siteLTIProperty);
+		if (prop != null) {
+			return Boolean.valueOf(prop).booleanValue();
+		}
+		
+		return false;
+	}
+	
+	public boolean siteCanUseLTIDirectSubmission(Site site){
+		ResourceProperties properties = site.getProperties();
+		
+		String prop = (String) properties.get(siteDirectSubmissionProperty);
 		if (prop != null) {
 			return Boolean.valueOf(prop).booleanValue();
 		}

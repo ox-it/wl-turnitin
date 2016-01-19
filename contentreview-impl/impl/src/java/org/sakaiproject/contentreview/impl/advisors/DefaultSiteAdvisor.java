@@ -32,4 +32,8 @@ public class DefaultSiteAdvisor implements ContentReviewSiteAdvisor {
 	public boolean siteCanUseLTIReviewService(Site site) {
 		return true;
 	}
+	
+	public boolean siteCanUseLTIDirectSubmission(Site site) {
+		return false;
+	}
 }
