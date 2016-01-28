@@ -396,6 +396,10 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 	public boolean isAcceptableContent(ContentResource resource) {
 		throw new UnsupportedOperationException("This is not yet implemented");
 	}
+	
+	public boolean isAcceptableSize(ContentResource resource) {
+		throw new UnsupportedOperationException("Not implemented");
+	}
 
 	public void processQueue() {
 		// TODO Auto-generated method stub

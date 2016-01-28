@@ -49,7 +49,7 @@ public class TurnitinContentValidator {
 	/**
 	 * Default max allowed filesize - should match turnitins own setting (surrently 20Mb)
 	 */
-	private static int TII_DEFAULT_MAX_FILE_SIZE = 20971520;
+	private static int TII_DEFAULT_MAX_FILE_SIZE = 41943040;
 	
 	private ServerConfigurationService serverConfigurationService; 
 	public void setServerConfigurationService (ServerConfigurationService serverConfigurationService) {
@@ -157,17 +157,21 @@ public class TurnitinContentValidator {
 		if (!fileTypeOk) {
 			return false;
 		}
-
-		//TODO: if file is too big reject here 10.48576 MB
+		else {
+			return true;
+		}
+	}
+	
+	public boolean isAcceptableSize(ContentResource resource) {
 
 		if (resource.getContentLength() > tii_Max_Fil_Size) {
-			log.debug("File is too big: " + resource.getContentLength());
+			log.warn("File is too big: " + resource.getContentLength());
 			return false;
 		}
 
 		//TII-93 content length must be > o
 		if (resource.getContentLength() == 0) {
-			log.debug("File is Ob");
+			log.warn("File is Ob");
 			return false;
 		}
 		
