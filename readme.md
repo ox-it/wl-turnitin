@@ -3,16 +3,22 @@ TII LTI integration
 
 The new TII LTI integration includes some new site properties needed for configuration. If they aren't added to the site the default value will be used:
 
-	* useContentReviewService : this property indicates whether we are using the TII integration or not
+	* useContentReviewService : this site property indicates whether we are using the TII integration or not
 		Default value: false
 	
-	* useContentReviewLTIService : this property indicates whether we are using the new LTI TII integration or the old API
+	* useContentReviewLTIService : this site property indicates whether we are using the new LTI TII integration or the old API
 		Default value: false
+		Note: it will only be checked if the previous property is true
 		
-	* useContentReviewDirectSubmission : this property indicates whether we are using the direct submission way or the Sakai submission method
+	* useContentReviewDirectSubmission : this site property indicates whether we are using the direct/external submission way or the Sakai submission method
 		Default value: false
+		Note: it will only be checked if the previous properties are true
 		
 NOTE: This properties will be checked when using the ContentReviewSiteAdvisor as the SiteAdvisor implementation.
 
+For instance, if we want to set up a new site for using the new LTI integration we'd need these properties:
+
+	useContentReviewService = true
+	useContentReviewLTIService = true
 
 TODO COMPLETE
