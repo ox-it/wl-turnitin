@@ -15,15 +15,19 @@ import org.json.JSONObject;
 
 import org.sakaiproject.assignment.api.AssignmentSubmissionEdit;
 import org.sakaiproject.assignment.cover.AssignmentService;
+import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.content.cover.ContentHostingService;
+import org.sakaiproject.content.api.ContentResourceEdit;
+import org.sakaiproject.contentreview.model.ContentReviewItem;
+import org.sakaiproject.contentreview.service.ContentReviewService;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
+import org.sakaiproject.event.cover.NotificationService;
 import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.tool.cover.SessionManager;
 
 /** 
  * This servlet will receive callbacks from TII. Then it will process the data
- * related to the submissions and store it.
- *
- * TODO complete
+ * related to the submissions and resubmission and store it.
  */
 
 @SuppressWarnings("deprecation")
@@ -31,6 +35,9 @@ public class SubmissionCallbackServlet extends HttpServlet {
 	
 	private static Log M_log = LogFactory.getLog(SubmissionCallbackServlet.class);
 	
+	private ContentReviewService contentReviewService =
+				(ContentReviewService)ComponentManager.get("org.sakaiproject.contentreview.service.ContentReviewService");
+				
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		M_log.debug("init SubmissionCallbackServlet");
@@ -78,11 +85,23 @@ public class SubmissionCallbackServlet extends HttpServlet {
 		try{
 			Session session = SessionManager.getCurrentSession();
 			session.setUserId("admin");
-			AssignmentSubmissionEdit ase = AssignmentService.editSubmission(submissionId);
-			ResourcePropertiesEdit aPropertiesEdit = ase.getPropertiesEdit();
-			aPropertiesEdit.addProperty("turnitin_id", String.valueOf(tiiPaperId));
-			AssignmentService.commitEditFromCallback(ase);
-			//maybe it should be stored on the contentresource
+			ContentReviewItem cri = contentReviewService.getFirstItemByContentId(submissionId);
+			if(cri == null){
+				M_log.debug("Could not find the content review item for content " + submissionId);
+				return;
+			} else {
+				ContentResourceEdit cre = ContentHostingService.editResource(cri.getContentId());
+				M_log.debug("Got content resource");
+				ResourcePropertiesEdit aPropertiesEdit = cre.getPropertiesEdit();
+				aPropertiesEdit.addProperty("turnitin_id", String.valueOf(tiiPaperId));
+				ContentHostingService.commitResource(cre, NotificationService.NOTI_NONE);//TODO check
+				M_log.debug("Successfully stored external id into content resource.");
+				//NOTE: storing it on the submission too, resubmission process has to be revised
+				AssignmentSubmissionEdit ase = AssignmentService.editSubmission(submissionId);
+				aPropertiesEdit = ase.getPropertiesEdit();
+				aPropertiesEdit.addProperty("turnitin_id", String.valueOf(tiiPaperId));
+				AssignmentService.commitEditFromCallback(ase);
+			}
 		}catch(Exception e){
 			M_log.error("Could not find submission with id " + submissionId + " or store the TII submission id: " + e.getMessage());
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

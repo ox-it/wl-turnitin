@@ -199,11 +199,43 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		dao.save(item);
 	}
 
-	private List<ContentReviewItem> getItemsByContentId(String contentId) {
+	protected List<ContentReviewItem> getItemsByContentId(String contentId) {
 		Search search = new Search();
 		search.addRestriction(new Restriction("contentId", contentId));
 		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
 		return existingItems;
+	}
+	
+	public ContentReviewItem getFirstItemByContentId(String contentId) {
+		Search search = new Search();
+		search.addRestriction(new Restriction("contentId", contentId));
+		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if (existingItems.size() == 0) {
+			log.debug("Content " + contentId + " has not been queued previously");
+			return null;
+		}
+
+		if (existingItems.size() > 1){
+			log.warn("More than one matching item - using first item found");
+		}
+
+		return existingItems.get(0);
+	}
+	
+	public ContentReviewItem getItemById(String id) {
+		Search search = new Search();
+		search.addRestriction(new Restriction("id", Long.valueOf(id)));
+		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if (existingItems.size() == 0) {
+			log.debug("Content " + id + " has not been queued previously");
+			return null;
+		}
+
+		if (existingItems.size() > 1){
+			log.warn("More than one matching item - using first item found");
+		}
+
+		return existingItems.get(0);
 	}
 	
 	public int getReviewScore(String contentId)
@@ -406,41 +438,31 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		
 	}
 
-	public ContentReviewItem getItemBySubmissionId(String submissionId, String contentId){
-		log.debug("getItemBySubmissionId " + submissionId);
-		Search search = new Search();
-		search.addRestriction(new Restriction("submissionId", submissionId));
-		search.addRestriction(new Restriction("contentId", contentId));
-		try{
-			List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
-			if(existingItems!=null){
-				if(existingItems.size() > 1){ log.debug("There's more than one critem"); }
-				return existingItems.get(0);//TODO with multiple submission this might be different, look at sakai11/vericite
-			}
-		} catch(Exception e){
-			log.warn("Item not found");//debug?
+	public boolean updateItemAccess(String contentId){
+		ContentReviewItem cri = getFirstItemByContentId(contentId);
+		if(cri != null){
+			cri.setUrlAccessed(true);
+			dao.update(cri);
+			return true;
+		}
+		return false;
+	}
+		
+	public boolean updateExternalGrade(String contentId, String score){
+		ContentReviewItem cri = getFirstItemByContentId(contentId);
+		if(cri != null){
+			cri.setExternalGrade(score);
+			dao.update(cri);
+			return true;
+		}
+		return false;
+	}
+	
+	public String getExternalGradeForContentId(String contentId){
+		ContentReviewItem cri = getFirstItemByContentId(contentId);
+		if(cri != null){
+			return cri.getExternalGrade();
 		}
 		return null;
-		//return existingItems;
 	}
-	
-	public boolean updateItemAccess(String submissionId, String contentId){
-		Search search = new Search();
-		search.addRestriction(new Restriction("submissionId", submissionId));
-		search.addRestriction(new Restriction("contentId", contentId));
-		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
-		if(existingItems==null){
-			return false;
-		} else {
-			if(existingItems.size() > 1){ log.debug("There's more than one critem"); }
-			ContentReviewItem thisItem = (ContentReviewItem) existingItems.get(0);
-			thisItem.setUrlAccessed(true);
-			dao.update(thisItem);
-		}
-		return true;
-	}
-
-
-	
-
 }

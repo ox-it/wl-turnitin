@@ -233,6 +233,7 @@ public class TurnitinLTIUtil {
 			} else {
 				String errorMessage = doc.getElementsByTagName("message").item(0).getChildNodes().item(0).getNodeValue();
 				log.error("Error when submitting to TII: " + errorMessage);//TODO return the error and store it?
+				return false;
 			}
 		} catch(Exception ee){
 			log.error("Could not parse TII response: " + ee.getMessage());

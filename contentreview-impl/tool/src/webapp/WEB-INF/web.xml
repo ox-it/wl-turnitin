@@ -34,6 +34,14 @@
 		<dispatcher>INCLUDE</dispatcher>
 	</filter-mapping>
 	
+	<filter-mapping>
+		<filter-name>sakai.request</filter-name>
+		<servlet-name>GradingCallbackServlet</servlet-name>
+		<dispatcher>REQUEST</dispatcher>
+		<dispatcher>FORWARD</dispatcher>
+		<dispatcher>INCLUDE</dispatcher>
+	</filter-mapping>
+	
 	<!-- TII Servlet -->
 	<servlet>
 		<servlet-name>TIICallbackServlet</servlet-name>
@@ -61,6 +69,17 @@
 	<servlet-mapping>
     	<servlet-name>SubmissionCallbackServlet</servlet-name>
     	<url-pattern>/submission-servlet</url-pattern>
+  	</servlet-mapping>
+	
+	<!-- Grading Servlet -->
+	<servlet>
+		<servlet-name>GradingCallbackServlet</servlet-name>
+		<servlet-class>org.sakaiproject.contentreview.servlet.GradingCallbackServlet</servlet-class>
+		<load-on-startup>2</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+    	<servlet-name>GradingCallbackServlet</servlet-name>
+    	<url-pattern>/grading-servlet</url-pattern>
   	</servlet-mapping>
 	
 	<!-- Sakai listeners -->

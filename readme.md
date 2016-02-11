@@ -14,7 +14,7 @@ The new TII LTI integration includes some new site properties needed for configu
 		Default value: false
 		Note: it will only be checked if the previous properties are true
 		
-NOTE: This properties will be checked when using the ContentReviewSiteAdvisor as the SiteAdvisor implementation.
+NOTE: This properties will be checked when using the SitePropertyAdvisor as the ContentReviewSiteAdvisor implementation.
 
 For instance, if we want to set up a new site for using the new LTI integration we'd need these properties:
 

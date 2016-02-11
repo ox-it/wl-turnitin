@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -428,13 +429,6 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 		
 		return getLTIAccess(item.getTaskId(), item.getSiteId());
 	}
-
-private List<ContentReviewItem> getItemsByContentId(String contentId) {
-        Search search = new Search();
-        search.addRestriction(new Restriction("contentId", contentId));
-        List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
-        return existingItems;
-    }
 
     /**
     * Get additional data from String if available
@@ -1158,15 +1152,15 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 						if(sub.getSubmitted()){
 							log.debug("Submission " + sub.getId());
 							boolean allowAnyFile = a.getContent().isAllowAnyFile();
-							String contentId = getFirstAcceptableAttachement(sub,allowAnyFile);
-							//if it wasnt added
-							if(getItemBySubmissionId(sub.getId(),contentId)==null){
-								log.debug("was not added");								
-								//TODO we might need cr to get the status
-								//ContentResource cr = getFirstAcceptableAttachement(allowAnyFile);
-								queueContent(sub.getSubmitterId(), null, a.getReference(), contentId, sub.getId());
+							List<ContentResource> resources = getAllAcceptableAttachments(sub,allowAnyFile);
+							for(ContentResource resource : resources){
+								//if it wasnt added
+								if(getFirstItemByContentId(resource.getId()) == null){
+									log.debug("was not added");								
+									queueContent(sub.getSubmitterId(), null, a.getReference(), resource.getId(), sub.getId());
+								}
+								//else - is there anything or any status we should check?
 							}
-							//else - is there anything or any status we should check?
 						}
 					}
 				}	
@@ -1664,6 +1658,7 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 					//ToDo we should probably remove these from the Queue
 					log.warn("IdUnusedException: no resource with id " + currentItem.getContentId());
 					dao.delete(currentItem);
+					releaseLock(currentItem);
 					errors++;
 					continue;
 				}
@@ -1691,7 +1686,6 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 			}
 
 			//TII-97 filenames can't be longer than 200 chars
-			//TODO test
 			if (fileName != null && fileName.length() >=200 ) {
 				fileName = truncateFileName(fileName, 198);
 			}
@@ -1713,13 +1707,14 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 				String[] parts = currentItem.getTaskId().split("/");
 				log.debug(parts[parts.length -1] + " " + parts.length);
 				String httpAccess = serverConfigurationService.getString("serverUrl") + "/access/assignment/s/" + currentItem.getSiteId() + "/" + parts[parts.length -1] + "/" + currentItem.getSubmissionId();
+				httpAccess += ":" + currentItem.getId();
 				log.debug("httpAccess url: " + httpAccess);//debug
 				ltiProps.put("custom_submission_url", httpAccess);
 				ltiProps.put("custom_submission_title", fileName);
 				ltiProps.put("custom_submission_filename", fileName);
-				ltiProps.put("ext_outcomes_tool_placement_url", "http://sakaitii.entornosdeformacion.com/sakai-contentreview-tool/submission-servlet");
-				//use lis_outcome_service_url for storing grades?
-				ltiProps.put("lis_result_sourcedid", currentItem.getSubmissionId());//or currentItem.getContentId()
+				ltiProps.put("ext_outcomes_tool_placement_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool/submission-servlet");
+				ltiProps.put("lis_outcome_service_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool-tii/grading-servlet");
+				ltiProps.put("lis_result_sourcedid", currentItem.getContentId());
 				ltiProps.put("custom_xmlresponse","1");//mandatory
 				
 				String tiiId = null;
@@ -1761,9 +1756,13 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 					log.debug("It's a resubmission");
 					//check we have TII id
 					AssignmentSubmission as = null;
+					ContentResource content = null;
 					try{
-						as = assignmentService.getSubmission(currentItem.getSubmissionId());						
+						//TODO decide resubmission process and which id we should use
+ 						as = assignmentService.getSubmission(currentItem.getSubmissionId());						
 						ResourceProperties aProperties = as.getProperties();
+						/*content = contentHostingService.getResource(currentItem.getContentId());						
+						ResourceProperties aProperties = content.getProperties();*/
 						String tiiPaperId = aProperties.getProperty("turnitin_id");
 						log.debug("This assignment has associated the following TII id: " + tiiPaperId);	
 						if(tiiPaperId != null){
@@ -1776,7 +1775,9 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 						log.error("Could not get submission by id " + currentItem.getSubmissionId() + " " + e.getMessage());
 					} catch(PermissionException e){
 						log.error("User doesn't have permission to access submission " + currentItem.getSubmissionId() + " " + e.getMessage());
-					}
+					} /* catch(Exception e){
++						log.error("Couldn't get content " + currentItem.getContentId() + " " + e.getMessage());
+ 					}*/
 				} else {
 					result = tiiUtil.makeLTIcall(tiiUtil.SUBMIT, tiiId, ltiProps);
 				}
@@ -2935,21 +2936,25 @@ private List<ContentReviewItem> getItemsByContentId(String contentId) {
 		return ltiUrl;
 	}
 	
-	private String getFirstAcceptableAttachement(AssignmentSubmission sub, boolean allowAnyFile) {		
-		try {
-			List attachments = sub.getSubmittedAttachments();
-			for( int i =0; i < attachments.size();i++ ) {
-				Reference ref = (Reference)attachments.get(i);
-				ContentResource contentResource = (ContentResource)ref.getEntity();
-				if (isAcceptableSize(contentResource) && (allowAnyFile || isAcceptableContent(contentResource))) {
-					return contentResource.getId();
-				}
-			}
-		}
-		catch (Exception e) {
-			log.warn("TII:getFirstAcceptableAttachment() " + e.getMessage());
-		}
-		return null;
+	private List<ContentResource> getAllAcceptableAttachments(AssignmentSubmission sub, boolean allowAnyFile){
+		List attachments = sub.getSubmittedAttachments();
+		List<ContentResource> resources = new ArrayList<ContentResource>();
+        for (int i = 0; i < attachments.size(); i++) {
+            Reference attachment = (Reference) attachments.get(i);
+            try {
+                ContentResource res = contentHostingService.getResource(attachment.getId());
+                if (isAcceptableSize(res) && (allowAnyFile || isAcceptableContent(res))) {
+                    resources.add(res);
+                }
+            } catch (PermissionException e) {
+                log.warn(":getAllAcceptableAttachments " + e.getMessage());
+            } catch (IdUnusedException e) {
+                log.warn(":getAllAcceptableAttachments " + e.getMessage());
+            } catch (TypeException e) {
+                log.warn(":getAllAcceptableAttachments " + e.getMessage());
+            }
+        }
+        return resources;
 	}
 	
 	private String switchLTIError(int result, String method){

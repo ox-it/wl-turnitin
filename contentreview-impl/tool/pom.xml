@@ -33,6 +33,18 @@
     </parent>
 
     <dependencies>
+		<dependency>
+            <groupId>org.sakaiproject.contentreview</groupId>
+            <artifactId>contentreview-model-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.sakaiproject.contentreview</groupId>
+            <artifactId>contentreview-service-api</artifactId>
+        </dependency>
+ 		<dependency>
+            <groupId>org.sakaiproject.kernel</groupId>
+            <artifactId>sakai-component-manager</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.sakaiproject.assignment</groupId>
             <artifactId>sakai-assignment-api</artifactId>
@@ -49,6 +61,12 @@
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
              <scope>provided</scope>
+        </dependency>
+		<dependency>
+        	<groupId>commons-lang</groupId>
+        	<artifactId>commons-lang</artifactId>
+        	<type>jar</type>
+        	<scope>provided</scope>
         </dependency>
 		<dependency>
             <groupId>org.json</groupId>

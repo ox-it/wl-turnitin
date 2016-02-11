@@ -22,9 +22,7 @@ import org.sakaiproject.tool.cover.SessionManager;
 
 /** 
  * This servlet will receive callbacks from TII. Then it will process the data
- * related to the assignment and submissions and store it.
- *
- * TODO complete
+ * related to the assignment and store it.
  */
 
 @SuppressWarnings("deprecation")

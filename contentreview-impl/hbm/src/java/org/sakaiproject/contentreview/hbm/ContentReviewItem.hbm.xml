@@ -33,5 +33,6 @@
 		<property name="resubmission" type="boolean">
 			<column name="resubmission" not-null="true" default="false" />
 		</property>
+		<property name="externalGrade" type="string" length="255" not-null="false" />
 	</class>
 </hibernate-mapping>
