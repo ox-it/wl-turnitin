@@ -201,6 +201,22 @@ public class TurnitinLTIUtil {
 		return ltiService.insertToolContent(null, globalToolId, props, "!admin");
 	}
 	
+	public Map<String, Object> getTIIToolContent(String contentKey){
+		if(ltiService == null){
+			log.error("insertTIIToolContent: Could not find LTI service.");
+			return null;
+		}
+		return ltiService.getContent(Long.valueOf(contentKey), "!admin");
+	}
+	
+	public Object updateTIIToolContent(String contentKey, Properties content){
+		if(ltiService == null){
+			log.error("insertTIIToolContent: Could not find LTI service.");
+			return null;
+		}
+		return ltiService.updateContent(Long.valueOf(contentKey), content, "!admin");
+	}
+	
 	private String formUrl(int type, String urlParam){
 		switch(type){
 			case BASIC_ASSIGNMENT:

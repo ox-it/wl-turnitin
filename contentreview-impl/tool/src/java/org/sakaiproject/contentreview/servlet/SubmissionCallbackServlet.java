@@ -97,7 +97,7 @@ public class SubmissionCallbackServlet extends HttpServlet {
 				ContentHostingService.commitResource(cre, NotificationService.NOTI_NONE);//TODO check
 				M_log.debug("Successfully stored external id into content resource.");
 				//NOTE: storing it on the submission too, resubmission process has to be revised
-				AssignmentSubmissionEdit ase = AssignmentService.editSubmission(submissionId);
+				AssignmentSubmissionEdit ase = AssignmentService.editSubmission(cri.getSubmissionId());
 				aPropertiesEdit = ase.getPropertiesEdit();
 				aPropertiesEdit.addProperty("turnitin_id", String.valueOf(tiiPaperId));
 				AssignmentService.commitEditFromCallback(ase);

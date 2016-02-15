@@ -1030,12 +1030,20 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 			String title = extraAsnnOpts.get("title").toString();
 			ltiProps.put("resource_link_title", title);
 			String description = extraAsnnOpts.get("descr").toString();
-			if(description != null)
+			if(description != null){
 				description = description.replaceAll("\\<.*?>","");//TODO improve this
+			}
 			ltiProps.put("resource_link_description", description);
 			ltiProps.put("custom_startdate", extraAsnnOpts.get("isostart").toString());//TODO take care of null values
 			ltiProps.put("custom_duedate", extraAsnnOpts.get("isodue").toString());
 			ltiProps.put("custom_feedbackreleasedate", extraAsnnOpts.get("isodue").toString());
+			
+			String custom = BasicLTIConstants.RESOURCE_LINK_ID + "=" + taskId;
+			custom += ";" + BasicLTIConstants.RESOURCE_LINK_TITLE + "=" + title;
+			custom += ";" + BasicLTIConstants.RESOURCE_LINK_DESCRIPTION + "=" + description;
+			custom += ";" + "custom_startdate=" + extraAsnnOpts.get("isostart").toString();
+			custom += ";" + "custom_duedate=" + extraAsnnOpts.get("isodue").toString();
+			custom += ";" + "custom_feedbackreleasedate=" + extraAsnnOpts.get("isodue").toString();			
 			
 			Map instructorInfo = turnitinConn.getInstructorInfo(siteId);
 			ltiProps.put("roles", "Instructor");
@@ -1056,25 +1064,42 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 			//ONLY FOR TII UK
 			//ltiProps.setProperty("custom_anonymous_marking_enabled", extraAsnnOpts.get("s_paper_check"));
  
+			custom += ";" + "custom_maxpoints=" + extraAsnnOpts.get("points").toString();
+			custom += ";" + "custom_studentpapercheck=" + extraAsnnOpts.get("s_paper_check").toString();
+			custom += ";" + "custom_journalcheck=" + extraAsnnOpts.get("journal_check").toString();
+			custom += ";" + "custom_internetcheck=" + extraAsnnOpts.get("internet_check").toString();
+			custom += ";" + "custom_institutioncheck=" + extraAsnnOpts.get("institution_check").toString();
+			custom += ";" + "custom_allow_non_or_submissions=" + extraAsnnOpts.get("allow_any_file").toString();
+  
 			if (extraAsnnOpts.containsKey("exclude_type") && extraAsnnOpts.containsKey("exclude_value")){
 				//exclude type 0=none, 1=words, 2=percentages
 				String typeAux = "words";
-				if(extraAsnnOpts.get("exclude_type").toString().equals("2"))
+				if(extraAsnnOpts.get("exclude_type").toString().equals("2")){
 					typeAux = "percentage";
+				}
 				ltiProps.put("custom_exclude_type", typeAux);
 				ltiProps.put("custom_exclude_value", extraAsnnOpts.get("exclude_value").toString());
+				custom += ";" + "custom_exclude_type=" + typeAux;
+				custom += ";" + "custom_exclude_value=" + extraAsnnOpts.get("exclude_value").toString();
 			}
 
 	        ltiProps.put("custom_late_accept_flag", extraAsnnOpts.get("late_accept_flag").toString());
 	        ltiProps.put("custom_report_gen_speed", extraAsnnOpts.get("report_gen_speed").toString());
 	        ltiProps.put("custom_s_view_reports", extraAsnnOpts.get("s_view_report").toString());			
 	        ltiProps.put("custom_submit_papers_to", extraAsnnOpts.get("submit_papers_to").toString());
+			
+			custom += ";" + "custom_late_accept_flag=" + extraAsnnOpts.get("late_accept_flag").toString();			
+			custom += ";" + "custom_report_gen_speed=" + extraAsnnOpts.get("report_gen_speed").toString();
+			custom += ";" + "custom_s_view_reports=" + extraAsnnOpts.get("s_view_report").toString();
+			custom += ";" + "custom_submit_papers_to=" + extraAsnnOpts.get("submit_papers_to").toString();
 
 			if (extraAsnnOpts.containsKey("exclude_biblio")){
 				ltiProps.put("custom_use_biblio_exclusion", extraAsnnOpts.get("exclude_biblio").toString());
+				custom += ";" + "custom_use_biblio_exclusion=" + extraAsnnOpts.get("exclude_biblio").toString();
 			}
 			if (extraAsnnOpts.containsKey("exclude_quoted")){
 				ltiProps.put("custom_use_quoted_exclusion", extraAsnnOpts.get("exclude_quoted").toString());
+				custom += ";" + "custom_use_quoted_exclusion=" + extraAsnnOpts.get("exclude_quoted").toString();
 			}
 			
 			//adding callback url
@@ -1088,48 +1113,58 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				throw new TransientSubmissionException("Create Assignment not successful. Check the logs to see message.");
 			}
 			
-			//don't create lti tool if exists
-			if(tiiId == null || ltiId == null){
-				Properties sakaiProps = new Properties();
-				String globalId = tiiUtil.getGlobalTurnitinLTIToolId();
-				if(globalId==null){
-					throw new TransientSubmissionException("Create Assignment not successful. TII LTI global id not set");
-				}
-				sakaiProps.setProperty(LTIService.LTI_TOOL_ID,globalId);
-				
-				String custom = BasicLTIConstants.RESOURCE_LINK_ID + "=" + taskId;
-				custom += ";" + BasicLTIConstants.RESOURCE_LINK_TITLE + "=" + extraAsnnOpts.get("title").toString();
-				log.debug("Storing custom params: " + custom);
-				sakaiProps.setProperty(LTIService.LTI_CUSTOM,custom);
-				sakaiProps.setProperty(LTIService.LTI_SITE_ID,siteId);
-				sakaiProps.setProperty(LTIService.LTI_TITLE,title);
-				
-				SecurityAdvisor advisor = new SimpleSecurityAdvisor(sessionManager.getCurrentSessionUserId(), "site.upd", "/site/!admin");
-				Object ltiContent = null;
-				try{
-					securityService.pushAdvisor(advisor);
+			Properties sakaiProps = new Properties();
+			String globalId = tiiUtil.getGlobalTurnitinLTIToolId();
+			if(globalId == null){
+				throw new TransientSubmissionException("Create Assignment not successful. TII LTI global id not set");
+			}
+			/*WE OVERRIDE THE PROPERTIES EVERYTIME
+			if(ltiId != null){
+				log.debug("Retrieving old LTI properties");
+				Map<String,Object> propsAux = tiiUtil.getTIIToolContent(ltiId);
+				sakaiProps.putAll(propsAux);
+			}*/
+
+			sakaiProps.setProperty(LTIService.LTI_TOOL_ID,globalId);				
+			sakaiProps.setProperty(LTIService.LTI_SITE_ID,siteId);
+			sakaiProps.setProperty(LTIService.LTI_TITLE,title);
+
+			log.debug("Storing custom params: " + custom);
+			sakaiProps.setProperty(LTIService.LTI_CUSTOM,custom);
+
+			SecurityAdvisor advisor = new SimpleSecurityAdvisor(sessionManager.getCurrentSessionUserId(), "site.upd", "/site/!admin");
+			Object ltiContent = null;
+			try{
+				securityService.pushAdvisor(advisor);
+				if(ltiId == null){
 					ltiContent = tiiUtil.insertTIIToolContent(globalId, sakaiProps);
-				} catch(Exception e){
-					throw new TransientSubmissionException("Create Assignment not successful. Error trying to insert TII tool content: " + e.getMessage());
-				} finally {
-					securityService.popAdvisor(advisor);
+				} else {//don't create lti tool if exists
+					ltiContent = tiiUtil.updateTIIToolContent(ltiId, sakaiProps);
 				}				
+			} catch(Exception e){
+				throw new TransientSubmissionException("Create Assignment not successful. Error trying to insert TII tool content: " + e.getMessage());
+			} finally {
+				securityService.popAdvisor(advisor);
+			}				
 				
-				if(ltiContent == null){
-					throw new TransientSubmissionException("Create Assignment not successful. Could not create LTI tool for the task: " + custom);
-				} else if(!(ltiContent instanceof Long)){
-					throw new TransientSubmissionException("Create Assignment not successful. Error creating LTI stealthed tool: " + ltiContent);
-				} else {//long if everything went fine
-					log.debug("LTI content tool id: " + ltiContent);
-					try{
-						AssignmentContentEdit ace = assignmentService.editAssignmentContent(taskId);
-						ResourcePropertiesEdit aPropertiesEdit = ace.getPropertiesEdit();
-						aPropertiesEdit.addProperty("lti_id", String.valueOf(ltiContent));
-						assignmentService.commitEdit(ace);
-					}catch(Exception e){
-						log.error("Could not store LTI tool ID " + ltiContent +" for assignment " + taskId);
-						log.error(e.getClass().getName() + " : " + e.getMessage());
-					}
+			if(ltiContent == null){
+				throw new TransientSubmissionException("Create Assignment not successful. Could not create LTI tool for the task: " + custom);
+			} else if(ltiId != null){
+				if(ltiContent instanceof String){
+					throw new TransientSubmissionException("Update Assignment not successful. Error updating LTI stealthed tool: " + ltiId);
+				}//boolean if everything went fine
+			} else if(!(ltiContent instanceof Long)){
+				throw new TransientSubmissionException("Create Assignment not successful. Error creating LTI stealthed tool: " + ltiContent);
+			} else {//long if everything went fine
+				log.debug("LTI content tool id: " + ltiContent);
+				try{
+					AssignmentContentEdit ace = assignmentService.editAssignmentContent(taskId);
+					ResourcePropertiesEdit aPropertiesEdit = ace.getPropertiesEdit();
+					aPropertiesEdit.addProperty("lti_id", String.valueOf(ltiContent));
+					assignmentService.commitEdit(ace);
+				}catch(Exception e){
+					log.error("Could not store LTI tool ID " + ltiContent +" for assignment " + taskId);
+					log.error(e.getClass().getName() + " : " + e.getMessage());
 				}
 			}
 			
@@ -2177,7 +2212,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				ltiProps.put("lis_person_name_family", (String) instructorInfo.get("uln"));
 				ltiProps.put("lis_person_name_full", (String) instructorInfo.get("ufn")  +  " " + (String) instructorInfo.get("uln"));
 				
-				AssignmentSubmission as = null;
+				/*AssignmentSubmission as = null;
 				try{
 					as = assignmentService.getSubmission(currentItem.getSubmissionId());
 				} catch(Exception ex){
@@ -2190,10 +2225,25 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 					dao.update(currentItem);
 					continue;
 				}
-				ResourceProperties rp = as.getProperties();
-				String paperId = rp.getProperty("turnitin_id");//OJO esto se puede guardar como external id en el contentreview...
+				ResourceProperties rp = as.getProperties();*/
+				ContentResource cr = null;
+				try{
+					cr = contentHostingService.getResource(currentItem.getContentId());
+				} catch(Exception ex){
+					log.warn("Could not get content by id " + currentItem.getContentId() + " " + ex.getMessage());
+					long l = currentItem.getRetryCount().longValue();
+					l++;
+					currentItem.setRetryCount(Long.valueOf(l));
+					currentItem.setNextRetryTime(this.getNextRetryTime(Long.valueOf(l)));
+					currentItem.setLastError("Could not get submission by id");
+					dao.update(currentItem);
+					continue;
+				}
+				ResourceProperties rp = cr.getProperties();
+				String paperId = rp.getProperty("turnitin_id");
 				if(paperId == null){
-					log.warn("Could not find TII paper id for the submission " + currentItem.getSubmissionId());
+					//log.warn("Could not find TII paper id for the submission " + currentItem.getSubmissionId());
+					log.warn("Could not find TII paper id for the content " + currentItem.getContentId());
 					long l = currentItem.getRetryCount().longValue();
 					l++;
 					currentItem.setRetryCount(Long.valueOf(l));
@@ -2212,12 +2262,13 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 					//log.debug("new report received: " + currentItem.getExternalId() + " -> " + currentItem.getReviewScore());
 					log.debug("new report received: " + paperId + " -> " + currentItem.getReviewScore());
 				} else {
-					log.error("Error making LTI call");
 					if(result == -7){
+						log.debug("Report is still pending for paper " + paperId);
 						currentItem.setStatus(ContentReviewItem.SUBMITTED_AWAITING_REPORT_CODE);
 						currentItem.setLastError(null);
 						currentItem.setErrorCode(null);
 					} else {
+						log.error("Error making LTI call");
 						long l = currentItem.getRetryCount().longValue();
 						l++;
 						currentItem.setRetryCount(Long.valueOf(l));
