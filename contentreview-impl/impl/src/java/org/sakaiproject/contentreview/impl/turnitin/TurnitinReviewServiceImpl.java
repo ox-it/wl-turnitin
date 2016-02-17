@@ -1103,7 +1103,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 			}
 			
 			//adding callback url
-			String callbackUrl = serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool/tii-servlet";
+			String callbackUrl = serverConfigurationService.getServerUrl() + "/sakai-contentreview-tool/tii-servlet";
 			log.debug("callbackUrl: " + callbackUrl);
 			ltiProps.put("ext_resource_tool_placement_url", callbackUrl);
 			
@@ -1741,14 +1741,14 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				
 				String[] parts = currentItem.getTaskId().split("/");
 				log.debug(parts[parts.length -1] + " " + parts.length);
-				String httpAccess = serverConfigurationService.getString("serverUrl") + "/access/assignment/s/" + currentItem.getSiteId() + "/" + parts[parts.length -1] + "/" + currentItem.getSubmissionId();
+				String httpAccess = serverConfigurationService.getServerUrl() + "/access/assignment/s/" + currentItem.getSiteId() + "/" + parts[parts.length -1] + "/" + currentItem.getSubmissionId();
 				httpAccess += ":" + currentItem.getId();
 				log.debug("httpAccess url: " + httpAccess);//debug
 				ltiProps.put("custom_submission_url", httpAccess);
 				ltiProps.put("custom_submission_title", fileName);
 				ltiProps.put("custom_submission_filename", fileName);
-				ltiProps.put("ext_outcomes_tool_placement_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool/submission-servlet");
-				ltiProps.put("lis_outcome_service_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool/grading-servlet");
+				ltiProps.put("ext_outcomes_tool_placement_url", serverConfigurationService.getServerUrl() + "/sakai-contentreview-tool/submission-servlet");
+				ltiProps.put("lis_outcome_service_url", serverConfigurationService.getServerUrl() + "/sakai-contentreview-tool/grading-servlet");
 				ltiProps.put("lis_result_sourcedid", currentItem.getContentId());
 				ltiProps.put("custom_xmlresponse","1");//mandatory
 				
