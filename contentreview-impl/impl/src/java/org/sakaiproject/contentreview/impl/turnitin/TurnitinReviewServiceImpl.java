@@ -1747,8 +1747,8 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				ltiProps.put("custom_submission_url", httpAccess);
 				ltiProps.put("custom_submission_title", fileName);
 				ltiProps.put("custom_submission_filename", fileName);
-				ltiProps.put("ext_outcomes_tool_placement_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool-tii/submission-servlet");
-				ltiProps.put("lis_outcome_service_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool-tii/grading-servlet");
+				ltiProps.put("ext_outcomes_tool_placement_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool/submission-servlet");
+				ltiProps.put("lis_outcome_service_url", serverConfigurationService.getString("serverUrl") + "/sakai-contentreview-tool/grading-servlet");
 				ltiProps.put("lis_result_sourcedid", currentItem.getContentId());
 				ltiProps.put("custom_xmlresponse","1");//mandatory
 				
