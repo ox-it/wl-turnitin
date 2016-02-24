@@ -132,8 +132,8 @@ public class GradingCallbackServlet extends HttpServlet {
 				}
 				
 				if(convertedScore >= 0){
-					if(ac == null || ac.getTypeOfSubmission() != 5){
-						M_log.debug("Could not get assignment content or type setting for task " + cri.getTaskId());
+					if(ac.getTypeOfSubmission() != 5){
+						M_log.debug(ac.getTypeOfSubmission() + " is the type setting for task " + cri.getTaskId());
 						return;
 					} else {
 						AssignmentSubmissionEdit ase = AssignmentService.editSubmission(cri.getSubmissionId());
@@ -143,7 +143,7 @@ public class GradingCallbackServlet extends HttpServlet {
 								M_log.debug("Setting external grade as assignments grade");
 								ase.setGrade(convertedScoreString);								
 							} else {
-								M_log.debug("Flagging submssion");
+								M_log.debug("Flagging submission");
 								ase.setExternalGradeDifferent(Boolean.TRUE.booleanValue());
 							}
 							AssignmentService.commitEditFromCallback(ase);

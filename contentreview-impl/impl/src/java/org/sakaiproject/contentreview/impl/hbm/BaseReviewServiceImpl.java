@@ -386,7 +386,7 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 	}
 
 	public boolean isSiteAcceptable(Site s) {
-		return siteAdvisor.siteCanUseReviewService(s);
+		throw new UnsupportedOperationException("Not implemented");
 	}
 	
 

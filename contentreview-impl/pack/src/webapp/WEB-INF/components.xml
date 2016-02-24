@@ -79,6 +79,15 @@
 		<bean id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" class="org.sakaiproject.contentreview.impl.advisors.SiteCourseTypeAdvisor">
 		</bean>
 	-->
+	
+	<!--  Uncomment this to use a global property to define if every site uses c-r -->
+	<!--<bean id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" class="org.sakaiproject.contentreview.impl.advisors.GlobalPropertyAdvisor">
+		<property name="tiiProperty"><value>assignment.useContentReview</value></property>
+		<property name="tiiLTIProperty"><value>assignment.useContentReviewLTI</value></property>
+		<property name="tiiDirectSubmissionProperty"><value>assignment.useContentReviewDirect</value></property>
+		<property name="serverConfigurationService"
+			ref="org.sakaiproject.component.api.ServerConfigurationService" />
+	</bean>-->
 
 
 	<!-- QueuProcessing jobs -->

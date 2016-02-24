@@ -275,6 +275,26 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
  
 	}
 
+	/**
+ 	 * Allow Turnitin for this site?
+	 */
+	public boolean isSiteAcceptable(Site s) {
+
+		if (s == null) {
+			return false;
+		}
+
+		log.debug("isSiteAcceptable: " + s.getId() + " / " + s.getTitle());
+
+		// Delegated to another bean
+		if (siteAdvisor != null) {
+			return siteAdvisor.siteCanUseReviewService(s);
+		}
+
+		// No property set, no restriction on site types, so don't allow
+        return false; 
+    }
+	
 	public boolean isDirectAccess(Site s) {
 		if (s == null) {
 			return false;
@@ -469,7 +489,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				s = siteService.getSite(item.getSiteId());
 				
 				//////////////////////////////  NEW LTI INTEGRATION  ///////////////////////////////
-				if(siteAdvisor.siteCanUseLTIReviewService(s)){			
+				if(siteAdvisor.siteCanUseLTIReviewService(s)){
 					log.debug("getReviewScore using the LTI integration");			
 					return item.getReviewScore().intValue();
 				}
