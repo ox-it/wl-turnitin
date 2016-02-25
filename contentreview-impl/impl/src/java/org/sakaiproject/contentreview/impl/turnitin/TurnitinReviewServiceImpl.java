@@ -1165,7 +1165,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				throw new TransientSubmissionException("Create Assignment not successful. Error trying to insert TII tool content: " + e.getMessage());
 			} finally {
 				securityService.popAdvisor(advisor);
-			}				
+			}
 				
 			if(ltiContent == null){
 				throw new TransientSubmissionException("Create Assignment not successful. Could not create LTI tool for the task: " + custom);
@@ -1807,39 +1807,47 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				}
 				
 				int result = -1;
-				if(currentItem.isResubmission()){
+				if(currentItem.isResubmission()){//TODO decide resubmission process
 					log.debug("It's a resubmission");
 					//check we have TII id
-					AssignmentSubmission as = null;
-					ContentResource content = null;
+					String tiiPaperId = null;
 					try{
-						//TODO decide resubmission process and which id we should use
- 						as = assignmentService.getSubmission(currentItem.getSubmissionId());						
-						ResourceProperties aProperties = as.getProperties();
-						/*content = contentHostingService.getResource(currentItem.getContentId());						
-						ResourceProperties aProperties = content.getProperties();*/
-						String tiiPaperId = aProperties.getProperty("turnitin_id");
-						log.debug("This assignment has associated the following TII id: " + tiiPaperId);	
-						if(tiiPaperId != null){
-							result = tiiUtil.makeLTIcall(tiiUtil.RESUBMIT, tiiPaperId, ltiProps);
-						} else {//normal submission?
-							log.debug("doing a submission instead");
-							result = tiiUtil.makeLTIcall(tiiUtil.SUBMIT, tiiId, ltiProps);
+						org.sakaiproject.assignment.api.Assignment a = assignmentService.getAssignment(currentItem.getTaskId());
+						AssignmentContent ac = a.getContent();
+						if(ac == null){
+							log.debug("Could not find the assignment content " + currentItem.getTaskId());
+						} else {
+							log.debug("Got assignment content " + currentItem.getTaskId());
+							//1 - inline, 2 - attach, 3 - both, 4 - non elec, 5 - single file
+							if(ac.getTypeOfSubmission() == 5 || ac.getTypeOfSubmission() == 1){
+								AssignmentSubmission as = assignmentService.getSubmission(currentItem.getSubmissionId());						
+								ResourceProperties aProperties = as.getProperties();
+								tiiPaperId = aProperties.getProperty("turnitin_id");
+							} else if(ac.getTypeOfSubmission() == 2 || ac.getTypeOfSubmission() == 3){//won't work if files are different
+								ContentResource content = contentHostingService.getResource(currentItem.getContentId());
+								ResourceProperties aProperties = content.getProperties();
+								tiiPaperId = aProperties.getProperty("turnitin_id");
+							} else {
+								log.debug("Not valid type of assignment " + ac.getTypeOfSubmission());
+							}
 						}
-					} catch(IdUnusedException e){
-						log.error("Could not get submission by id " + currentItem.getSubmissionId() + " " + e.getMessage());
-					} catch(PermissionException e){
-						log.error("User doesn't have permission to access submission " + currentItem.getSubmissionId() + " " + e.getMessage());
-					} /* catch(Exception e){
-+						log.error("Couldn't get content " + currentItem.getContentId() + " " + e.getMessage());
- 					}*/
+					} catch(Exception e){
+						log.error("Couldn't get TII paper id for content " + currentItem.getContentId() + ": " + e.getMessage());
+					}
+					if(tiiPaperId != null){
+						log.debug("This content has associated the following TII id: " + tiiPaperId);
+						result = tiiUtil.makeLTIcall(tiiUtil.RESUBMIT, tiiPaperId, ltiProps);
+					} else {//normal submission?
+						log.debug("doing a submission instead");
+						result = tiiUtil.makeLTIcall(tiiUtil.SUBMIT, tiiId, ltiProps);
+					}
 				} else {
 					result = tiiUtil.makeLTIcall(tiiUtil.SUBMIT, tiiId, ltiProps);
 				}
 				
 				if(result >= 0){
 					log.debug("LTI submission successful");
-					//TODO on callback
+					//problems overriding this on callback
 					//currentItem.setExternalId(externalId);
 					currentItem.setStatus(ContentReviewItem.SUBMITTED_AWAITING_REPORT_CODE);
 					currentItem.setRetryCount(Long.valueOf(0));
@@ -2232,37 +2240,45 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				ltiProps.put("lis_person_name_family", (String) instructorInfo.get("uln"));
 				ltiProps.put("lis_person_name_full", (String) instructorInfo.get("ufn")  +  " " + (String) instructorInfo.get("uln"));
 				
-				/*AssignmentSubmission as = null;
-				try{
-					as = assignmentService.getSubmission(currentItem.getSubmissionId());
-				} catch(Exception ex){
-					log.warn("Could not get submission by id " + currentItem.getSubmissionId() + " " + ex.getMessage());
-					long l = currentItem.getRetryCount().longValue();
-					l++;
-					currentItem.setRetryCount(Long.valueOf(l));
-					currentItem.setNextRetryTime(this.getNextRetryTime(Long.valueOf(l)));
-					currentItem.setLastError("Could not get submission by id");
-					dao.update(currentItem);
-					continue;
+				String paperId = null;
+				if(currentItem.isResubmission()){//TODO until TII admits and solves the resubmission callback issue, this might be a workaround for single file submissions
+					log.debug("It's a resubmission");
+					try{
+						org.sakaiproject.assignment.api.Assignment a = assignmentService.getAssignment(currentItem.getTaskId());
+						AssignmentContent ac = a.getContent();
+						if(ac == null){
+							log.debug("Could not find the assignment content " + currentItem.getTaskId());
+						} else {
+							log.debug("Got assignment content " + currentItem.getTaskId());
+							//1 - inline, 2 - attach, 3 - both, 4 - non elec, 5 - single file
+							if(ac.getTypeOfSubmission() == 5 || ac.getTypeOfSubmission() == 1){
+								AssignmentSubmission as = assignmentService.getSubmission(currentItem.getSubmissionId());						
+								ResourceProperties aProperties = as.getProperties();
+								paperId = aProperties.getProperty("turnitin_id");
+							} //TODO should we? - else if(ac.getTypeOfSubmission() == 2 || ac.getTypeOfSubmission() == 3){
+						}
+					} catch(Exception e){
+						log.error("Couldn't get TII paper id for content " + currentItem.getContentId() + ": " + e.getMessage());
+					}
+				} else {//preferred way			
+					ContentResource cr = null;
+					try{
+						cr = contentHostingService.getResource(currentItem.getContentId());
+					} catch(Exception ex){
+						log.warn("Could not get content by id " + currentItem.getContentId() + " " + ex.getMessage());
+						long l = currentItem.getRetryCount().longValue();
+						l++;
+						currentItem.setRetryCount(Long.valueOf(l));
+						currentItem.setNextRetryTime(this.getNextRetryTime(Long.valueOf(l)));
+						currentItem.setLastError("Could not get submission by id");
+						dao.update(currentItem);
+						continue;
+					}
+					ResourceProperties rp = cr.getProperties();
+					paperId = rp.getProperty("turnitin_id");
 				}
-				ResourceProperties rp = as.getProperties();*/
-				ContentResource cr = null;
-				try{
-					cr = contentHostingService.getResource(currentItem.getContentId());
-				} catch(Exception ex){
-					log.warn("Could not get content by id " + currentItem.getContentId() + " " + ex.getMessage());
-					long l = currentItem.getRetryCount().longValue();
-					l++;
-					currentItem.setRetryCount(Long.valueOf(l));
-					currentItem.setNextRetryTime(this.getNextRetryTime(Long.valueOf(l)));
-					currentItem.setLastError("Could not get submission by id");
-					dao.update(currentItem);
-					continue;
-				}
-				ResourceProperties rp = cr.getProperties();
-				String paperId = rp.getProperty("turnitin_id");
+				
 				if(paperId == null){
-					//log.warn("Could not find TII paper id for the submission " + currentItem.getSubmissionId());
 					log.warn("Could not find TII paper id for the content " + currentItem.getContentId());
 					long l = currentItem.getRetryCount().longValue();
 					l++;
@@ -3005,6 +3021,24 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 			log.warn("Exception while trying to get LTI access for task " + taskId + " and site " + contextId + ": " + e.getMessage());
 		}
 		return ltiUrl;
+	}
+	
+	public boolean deleteLTITool(String taskId, String contextId){
+		SecurityAdvisor advisor = new SimpleSecurityAdvisor(sessionManager.getCurrentSessionUserId(), "site.upd", "/site/!admin");
+		boolean deleted = false;
+		try{
+			org.sakaiproject.assignment.api.Assignment a = assignmentService.getAssignment(taskId);
+			AssignmentContent ac = a.getContent();
+			ResourceProperties aProperties = ac.getProperties();
+			String ltiId = aProperties.getProperty("lti_id");
+			securityService.pushAdvisor(advisor);
+			deleted = tiiUtil.deleteTIIToolContent(ltiId);
+		} catch(Exception e){
+			log.warn("Error trying to delete TII tool content: " + e.getMessage());
+		} finally {
+			securityService.popAdvisor(advisor);
+		}
+		return deleted;
 	}
 	
 	private List<ContentResource> getAllAcceptableAttachments(AssignmentSubmission sub, boolean allowAnyFile){

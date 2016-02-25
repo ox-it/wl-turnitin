@@ -132,7 +132,7 @@ public class GradingCallbackServlet extends HttpServlet {
 				}
 				
 				if(convertedScore >= 0){
-					if(ac.getTypeOfSubmission() != 5){
+					if(ac.getTypeOfSubmission() != 5 && ac.getTypeOfSubmission() != 1){
 						M_log.debug(ac.getTypeOfSubmission() + " is the type setting for task " + cri.getTaskId());
 						return;
 					} else {

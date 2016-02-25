@@ -217,6 +217,14 @@ public class TurnitinLTIUtil {
 		return ltiService.updateContent(Long.valueOf(contentKey), content, "!admin");
 	}
 	
+	public boolean deleteTIIToolContent(String contentKey){
+		if(ltiService == null){
+			log.error("deleteTIIToolContent: Could not find LTI service.");
+			return false;
+		}
+		return ltiService.deleteContent(Long.valueOf(contentKey));
+	}
+	
 	private String formUrl(int type, String urlParam){
 		switch(type){
 			case BASIC_ASSIGNMENT:
