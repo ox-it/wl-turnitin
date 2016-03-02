@@ -165,13 +165,13 @@ public class TurnitinContentValidator {
 	public boolean isAcceptableSize(ContentResource resource) {
 
 		if (resource.getContentLength() > tii_Max_Fil_Size) {
-			log.warn("File is too big: " + resource.getContentLength());
+			log.warn("File " + resource.getId() + " is too big: " + resource.getContentLength());
 			return false;
 		}
 
 		//TII-93 content length must be > o
 		if (resource.getContentLength() == 0) {
-			log.warn("File is Ob");
+			log.warn("File " + resource.getId() + " is Ob");
 			return false;
 		}
 		

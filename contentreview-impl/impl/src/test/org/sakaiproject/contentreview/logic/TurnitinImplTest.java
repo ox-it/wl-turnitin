@@ -1,13 +1,19 @@
 package org.sakaiproject.contentreview.logic;
 
+import java.util.ArrayList;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.assignment.api.Assignment;
+import org.sakaiproject.assignment.api.AssignmentContent;
+import org.sakaiproject.assignment.api.AssignmentContentEdit;
+import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
@@ -19,6 +25,8 @@ import org.sakaiproject.contentreview.impl.turnitin.TurnitinAccountConnection;
 import org.sakaiproject.contentreview.impl.turnitin.TurnitinReviewServiceImpl;
 import org.sakaiproject.contentreview.impl.advisors.SitePropertyAdvisor;
 import org.sakaiproject.contentreview.mocks.FakeAssignment;
+import org.sakaiproject.contentreview.mocks.FakeAssignmentContent;
+import org.sakaiproject.contentreview.mocks.FakeAssignmentContentEdit;
 import org.sakaiproject.contentreview.mocks.FakeSiteAdvisor;
 import org.sakaiproject.contentreview.mocks.FakeSite;
 import org.sakaiproject.contentreview.mocks.FakeTiiUtil;
@@ -26,12 +34,14 @@ import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.turnitin.util.TurnitinLTIUtil;
 import org.springframework.test.AbstractTransactionalSpringContextTests;
 
+import org.easymock.EasyMock;
 import static org.easymock.EasyMock.*;
 import static org.mockito.Mockito.*;
 
 public class TurnitinImplTest extends AbstractTransactionalSpringContextTests {
 	private static final Log log = LogFactory.getLog(TurnitinImplTest.class);
 	
+	private AssignmentService M_assi;
 	private SiteService	M_ss;
 	private LTIService	M_lti;
 	private FakeTiiUtil M_util;
@@ -50,6 +60,7 @@ public class TurnitinImplTest extends AbstractTransactionalSpringContextTests {
 	
 	public void testFileEscape() {
 		TurnitinReviewServiceImpl tiiService = new TurnitinReviewServiceImpl();
+		
 		String someEscaping = tiiService.escapeFileName("Practical%203.docx", "contentId");
 		assertEquals("Practical_3.docx", someEscaping);
 		
@@ -65,6 +76,7 @@ public class TurnitinImplTest extends AbstractTransactionalSpringContextTests {
 	public void testCreateAssignment() throws Exception {
 		
 		M_util = new FakeTiiUtil();
+		M_assi = createMock(AssignmentService.class);
 		M_ss = createMock(SiteService.class);
 		M_lti = createMock(LTIService.class);
 		M_util.setLtiService(M_lti);
@@ -73,6 +85,7 @@ public class TurnitinImplTest extends AbstractTransactionalSpringContextTests {
 
 		FakeSiteAdvisor siteAdvisor = new FakeSiteAdvisor();
 		tiiService.setSiteService(M_ss);
+		tiiService.setAssignmentService(M_assi);
 
 		Map opts = new HashMap();        
         opts.put("submit_papers_to", "0");
@@ -102,8 +115,25 @@ public class TurnitinImplTest extends AbstractTransactionalSpringContextTests {
 		replay(M_ss);
 		tiiService.setSiteAdvisor(siteAdvisor);
 		
+		Assignment assignA = new FakeAssignment("taskId");
+		List l = new ArrayList();
+		l.add(assignA);
+		AssignmentContent contentA = new FakeAssignmentContent("taskId");
+		expect(M_assi.getAssignmentContent("taskId")).andStubReturn(contentA);
+		AssignmentContentEdit contentEdA = new FakeAssignmentContentEdit("taskId");
+		expect(M_assi.editAssignmentContent("taskId")).andStubReturn(contentEdA);
+		expect(M_assi.getAssignments(contentA)).andStubReturn(l.iterator());
+		M_assi.commitEdit(contentEdA);
+		EasyMock.expectLastCall();
+		expect(M_assi.getSubmissions(assignA)).andStubReturn(null);
+		replay(M_assi);
+		
 		TurnitinAccountConnection tac = new TurnitinAccountConnection();
 		tac.setUseSourceParameter(false);
+		/*tac.setDefaultInstructorEmail("defaultmail");
+		tac.setDefaultInstructorFName("defaultname");
+		tac.setDefaultInstructorLName("defaullastname");
+		tac.setDefaultInstructorId("defaultid");*/
 		tiiService.setTurnitinConn(tac);
 		
 		M_conf = createMock(ServerConfigurationService.class);

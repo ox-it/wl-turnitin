@@ -41,39 +41,22 @@ public class SitePropertyAdvisor implements ContentReviewSiteAdvisor {
 		siteDirectSubmissionProperty = p;
 	}
 	
-	public boolean siteCanUseReviewService(Site site) {
-		
-		ResourceProperties properties = site.getProperties();
-		
-		String prop = (String) properties.get(siteProperty);
-		if (prop != null) {
-			return Boolean.valueOf(prop).booleanValue();
-		}
-		
-		return false;
+	public boolean siteCanUseReviewService(Site site) {		
+		ResourceProperties properties = site.getProperties();		
+		String prop = properties.getProperty(siteProperty);
+		return Boolean.valueOf(prop).booleanValue();
 	}
 	
 	public boolean siteCanUseLTIReviewService(Site site) {
-		//maybe need to add this too -- if(!siteCanUseReviewService(site)) return false;
-		ResourceProperties properties = site.getProperties();
-		
-		String prop = (String) properties.get(siteLTIProperty);
-		if (prop != null) {
-			return Boolean.valueOf(prop).booleanValue();
-		}
-		
-		return false;
+		ResourceProperties properties = site.getProperties();		
+		String prop = properties.getProperty(siteLTIProperty);
+		return Boolean.valueOf(prop).booleanValue();
 	}
 	
 	public boolean siteCanUseLTIDirectSubmission(Site site){
-		ResourceProperties properties = site.getProperties();
-		
-		String prop = (String) properties.get(siteDirectSubmissionProperty);
-		if (prop != null) {
-			return Boolean.valueOf(prop).booleanValue();
-		}
-		
-		return false;
+		ResourceProperties properties = site.getProperties();		
+		String prop = properties.getProperty(siteDirectSubmissionProperty);
+		return Boolean.valueOf(prop).booleanValue();
 	}
 
 }

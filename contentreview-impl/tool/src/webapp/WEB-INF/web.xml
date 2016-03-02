@@ -57,7 +57,7 @@
 	</servlet>
 	<servlet-mapping>
     	<servlet-name>TIICallbackServlet</servlet-name>
-    	<url-pattern>/tii-servlet</url-pattern>
+    	<url-pattern>/tii-servlet/*</url-pattern>
   	</servlet-mapping>
 	
 	<!-- Submission Servlet -->
@@ -68,7 +68,7 @@
 	</servlet>
 	<servlet-mapping>
     	<servlet-name>SubmissionCallbackServlet</servlet-name>
-    	<url-pattern>/submission-servlet</url-pattern>
+    	<url-pattern>/submission-servlet/*</url-pattern>
   	</servlet-mapping>
 	
 	<!-- Grading Servlet -->
@@ -79,7 +79,7 @@
 	</servlet>
 	<servlet-mapping>
     	<servlet-name>GradingCallbackServlet</servlet-name>
-    	<url-pattern>/grading-servlet</url-pattern>
+    	<url-pattern>/grading-servlet/*</url-pattern>
   	</servlet-mapping>
 	
 	<!-- Sakai listeners -->

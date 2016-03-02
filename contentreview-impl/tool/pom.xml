@@ -74,7 +74,16 @@
             <!--<version>20150729</version>-->
 			<version>20140107</version>
         </dependency>
-
+		<dependency>
+			<groupId>org.sakaiproject.basiclti</groupId>
+			<artifactId>basiclti-common</artifactId>
+			<version>10-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.sakaiproject.basiclti</groupId>
+			<artifactId>basiclti-util</artifactId>
+			<version>10-SNAPSHOT</version>
+		</dependency>
 
     </dependencies>
 

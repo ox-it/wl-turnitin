@@ -20,16 +20,20 @@ public class SiteToolAdvisor implements ContentReviewSiteAdvisor {
     private Collection<String> contentReviewTools = Collections.emptyList();
 
     public boolean siteCanUseReviewService(Site site) {
-        for(String toolId : contentReviewTools)
-            if(site.getToolForCommonId(toolId) != null)
+        for(String toolId : contentReviewTools){
+            if(site.getToolForCommonId(toolId) != null){
                 return true;
+			}
+		}
         return false;
     }
 
 	public boolean siteCanUseLTIReviewService(Site site) {
-        for(String toolId : contentReviewTools)
-            if(site.getToolForCommonId(toolId) != null)
+        for(String toolId : contentReviewTools){
+            if(site.getToolForCommonId(toolId) != null){
                 return true;
+			}
+		}
         return false;
     }
 	
