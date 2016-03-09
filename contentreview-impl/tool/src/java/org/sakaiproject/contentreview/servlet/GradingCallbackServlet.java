@@ -126,7 +126,7 @@ public class GradingCallbackServlet extends HttpServlet {
 			sourcedId = doc.getElementsByTagName("sourcedId").item(0).getChildNodes().item(0).getNodeValue();
 			String score = doc.getElementsByTagName("textString").item(0).getChildNodes().item(0).getNodeValue();//catched exception if textString is null
 			M_log.debug("sourcedId " + sourcedId + ", score " + score);
-			
+
 			Session session = SessionManager.getCurrentSession();
 			session.setUserId("admin");
 			if(contentReviewService == null){
@@ -151,8 +151,11 @@ public class GradingCallbackServlet extends HttpServlet {
 				int dec = (int)Math.log10(factor);
 				int maxPoints = assign.getMaxGradePoint() / dec;*/
 				int maxPoints = ac.getMaxGradePoint() / 10;
+				if(maxPoints == 0){//assignment grades might not be numeric
+					return;
+				}
 				float convertedScore = Float.valueOf(score)*maxPoints;
-				String convertedScoreString = String.valueOf(convertedScore);
+				String convertedScoreString = String.format("%.1f", convertedScore);
 				M_log.debug("Maximum points: " + maxPoints + " - converted score: " + convertedScoreString);
 				
 				M_log.debug("cri " + cri.getId() + " - " + cri.getContentId());

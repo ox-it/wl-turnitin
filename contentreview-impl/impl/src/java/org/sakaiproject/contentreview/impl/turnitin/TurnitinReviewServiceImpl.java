@@ -115,6 +115,9 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 	private int sendSubmissionNotification = 0;
 
 	private Long maxRetry = null;
+	public void setMaxRetry(Long maxRetry) {
+		this.maxRetry = maxRetry;
+	}
 
 	//note that the assignment id actually has to be unique globally so use this as a prefix
 	// eg. assignid = defaultAssignId + siteId
@@ -1053,6 +1056,10 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 			String description = extraAsnnOpts.get("descr").toString();
 			if(description != null){
 				description = description.replaceAll("\\<.*?>","");//TODO improve this
+				int instructionsMax = serverConfigurationService.getInt("contentreview.instructions.max", 1000);
+				if(description.length() > instructionsMax){
+					description = description.substring(0, instructionsMax);
+				}
 			}
 			ltiProps.put("resource_link_description", description);
 			ltiProps.put("custom_startdate", extraAsnnOpts.get("isostart").toString());//TODO take care of null values
@@ -1075,7 +1082,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 	        ltiProps.put("custom_internetcheck", extraAsnnOpts.get("internet_check").toString());
 	        ltiProps.put("custom_institutioncheck",extraAsnnOpts.get("institution_check").toString());
 			ltiProps.put("custom_allow_non_or_submissions", extraAsnnOpts.get("allow_any_file").toString());
-					//change assignment texts
+
 			//ONLY FOR TII UK
 			//ltiProps.setProperty("custom_anonymous_marking_enabled", extraAsnnOpts.get("s_paper_check"));
  
@@ -1813,7 +1820,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 								AssignmentSubmission as = assignmentService.getSubmission(currentItem.getSubmissionId());						
 								ResourceProperties aProperties = as.getProperties();
 								tiiPaperId = aProperties.getProperty("turnitin_id");
-							} else if(ac.getTypeOfSubmission() == 2 || ac.getTypeOfSubmission() == 3){//won't work if files are different
+							} else if(ac.getTypeOfSubmission() == 2 || ac.getTypeOfSubmission() == 3){//won't work as files are different
 								ContentResource content = contentHostingService.getResource(currentItem.getContentId());
 								ResourceProperties aProperties = content.getProperties();
 								tiiPaperId = aProperties.getProperty("turnitin_id");
