@@ -2916,7 +2916,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 	@SuppressWarnings("unchecked")
 	public Map putInstructorInfo(Map ltiProps, String siteId) {
 
-		log.debug("Getting instructor info for site " + siteId);
+		log.debug("Putting instructor info for site " + siteId);
 
 		if (!turnitinConn.isUseSourceParameter()) {
 			ltiProps.put("roles", "Instructor");

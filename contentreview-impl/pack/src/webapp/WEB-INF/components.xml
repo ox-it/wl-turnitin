@@ -181,6 +181,7 @@
     <property name="dao" ref="org.sakaiproject.contentreview.dao.ContentReviewDao" />
     <property name="serverConfigurationService"
             ref="org.sakaiproject.component.api.ServerConfigurationService" />
+	<property name="contentReviewSiteAdvisor" ref="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" />
 </bean>
 
 <!--Migrate SRC-->
@@ -198,6 +199,7 @@
     <property name="dao" ref="org.sakaiproject.contentreview.dao.ContentReviewDao" />
     <property name="siteService" ref="org.sakaiproject.site.api.SiteService" />
     <property name="contentReviewService" ref="org.sakaiproject.contentreview.service.ContentReviewService" />
+	<property name="contentReviewSiteAdvisor" ref="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" />
    </bean>
 
    <bean id="org.sakaiproject.contentreview.impl.turnitin.TurnitinAccountConnection"
