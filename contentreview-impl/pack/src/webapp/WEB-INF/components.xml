@@ -47,12 +47,16 @@
 		<property name="turnitinContentValidator"
 			ref="org.sakaiproject.contentreview.impl.turnitin.TurnitinContentValidator" />
 		<property name="siteService" ref="org.sakaiproject.site.api.SiteService" />
+		<property name="sessionManager" ref="org.sakaiproject.tool.api.SessionManager" />
+		<property name="securityService" ref="org.sakaiproject.authz.api.SecurityService" />
 		<property name="turnitinConn" ref="org.sakaiproject.contentreview.impl.turnitin.TurnitinAccountConnection" />
+		<property name="tiiUtil" ref="org.sakaiproject.turnitin.util.TurnitinLTIUtil" />
+		<property name="assignmentService" ref="org.sakaiproject.assignment.api.AssignmentService" />
 	</bean>
 
-	<bean
+	<!--<bean
 		id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor"
-		class="org.sakaiproject.contentreview.impl.adivisors.SiteToolAdvisor">
+		class="org.sakaiproject.contentreview.impl.advisors.SiteToolAdvisor">
 
         <property name="contentReviewTools">
             <list>
@@ -60,19 +64,30 @@
                 <value>sakai.assignment.grades</value>
             </list>
         </property>
-    </bean>
+    </bean>-->
 
 	<!--  Uncomment this to use a site property to define which sites use c-r -->
-	<!--
-		<bean id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" class="org.sakaiproject.contentreview.impl.adivisors.SitePropertyAdvisor">
+	
+	<bean id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" class="org.sakaiproject.contentreview.impl.advisors.SitePropertyAdvisor">
 		<property name="siteProperty"><value>useContentReviewService</value></property>
-		</bean>
-	-->
+		<property name="siteLTIProperty"><value>useContentReviewLTIService</value></property>
+		<property name="siteDirectSubmissionProperty"><value>useContentReviewDirectSubmission</value></property>
+	</bean>
+
 	<!-- uncomment this bean to make cr available to only sites of the type course -->
 	<!--
-		<bean id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" class="org.sakaiproject.contentreview.impl.adivisors.SiteCourseTypeAdvisor">
+		<bean id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" class="org.sakaiproject.contentreview.impl.advisors.SiteCourseTypeAdvisor">
 		</bean>
 	-->
+	
+	<!--  Uncomment this to use a global property to define if every site uses c-r -->
+	<!--<bean id="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" class="org.sakaiproject.contentreview.impl.advisors.GlobalPropertyAdvisor">
+		<property name="tiiProperty"><value>assignment.useContentReview</value></property>
+		<property name="tiiLTIProperty"><value>assignment.useContentReviewLTI</value></property>
+		<property name="tiiDirectSubmissionProperty"><value>assignment.useContentReviewDirect</value></property>
+		<property name="serverConfigurationService"
+			ref="org.sakaiproject.component.api.ServerConfigurationService" />
+	</bean>-->
 
 
 	<!-- QueuProcessing jobs -->
@@ -110,6 +125,9 @@
 		<property name="contentReviewService">
 			<ref
 				bean="org.sakaiproject.contentreview.service.ContentReviewService" />
+		</property>
+		<property name="sessionManager">
+			<ref bean="org.sakaiproject.tool.api.SessionManager" />
 		</property>
 	</bean>
 
@@ -163,6 +181,7 @@
     <property name="dao" ref="org.sakaiproject.contentreview.dao.ContentReviewDao" />
     <property name="serverConfigurationService"
             ref="org.sakaiproject.component.api.ServerConfigurationService" />
+	<property name="contentReviewSiteAdvisor" ref="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" />
 </bean>
 
 <!--Migrate SRC-->
@@ -180,6 +199,7 @@
     <property name="dao" ref="org.sakaiproject.contentreview.dao.ContentReviewDao" />
     <property name="siteService" ref="org.sakaiproject.site.api.SiteService" />
     <property name="contentReviewService" ref="org.sakaiproject.contentreview.service.ContentReviewService" />
+	<property name="contentReviewSiteAdvisor" ref="org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor" />
    </bean>
 
    <bean id="org.sakaiproject.contentreview.impl.turnitin.TurnitinAccountConnection"
@@ -192,5 +212,10 @@
             ref="org.sakaiproject.user.api.UserDirectoryService" />
    </bean>
 
-
+	<bean id="org.sakaiproject.turnitin.util.TurnitinLTIUtil"
+			class="org.sakaiproject.turnitin.util.TurnitinLTIUtil"
+			init-method="init">
+		<property name="ltiService" ref="org.sakaiproject.lti.api.LTIService" />
+		<property name="serverConfigurationService" ref="org.sakaiproject.component.api.ServerConfigurationService" />
+	</bean>
 </beans>

@@ -65,7 +65,7 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		this.userDirectoryService = userDirectoryService;
 	}
 	
-	private ContentReviewSiteAdvisor siteAdvisor;
+	protected ContentReviewSiteAdvisor siteAdvisor;
 	public void setSiteAdvisor(ContentReviewSiteAdvisor crsa) {
 		this.siteAdvisor = crsa;
 	}
@@ -110,14 +110,132 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
 				ContentReviewItem.NOT_SUBMITTED_CODE);
 		item.setNextRetryTime(new Date());
+		item.setUrlAccessed(false);
+		dao.save(item);
+	}
+	
+	public void queueContent(String userId, String siteId, String taskId, String contentId, String submissionId)
+		throws QueueException {
+	
+		log.debug("Method called queueContent(" + userId + "," + siteId + "," + contentId + ")");
+
+		if (userId == null) {
+			log.debug("Using current user");
+			userId = userDirectoryService.getCurrentUser().getId();
+		}
+
+		if (siteId == null) {
+			log.debug("Using current site");
+			siteId = toolManager.getCurrentPlacement().getContext();
+		}
+
+		if (taskId == null) {
+			log.debug("Generating default taskId");
+			taskId = siteId + " " + defaultAssignmentName;
+		}
+
+		log.debug("Adding content: " + contentId + " from site " + siteId
+					+ " and user: " + userId + " for task: " + taskId + " to submission queue");
+
+		/*
+		 * first check that this content has not been submitted before this may
+		 * not be the best way to do this - perhaps use contentId as the primary
+		 * key for now id is the primary key and so the database won't complain
+		 * if we put in repeats necessitating the check
+		 */
+
+		List<ContentReviewItem> existingItems = getItemsByContentId(contentId);
+		if (existingItems.size() > 0) {
+			throw new QueueException("Content " + contentId + " is already queued, not re-queued");
+		}
+		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
+			ContentReviewItem.NOT_SUBMITTED_CODE);
+		item.setNextRetryTime(new Date());
+		item.setUrlAccessed(false);
+		item.setSubmissionId(submissionId);
+		dao.save(item);
+	}
+	
+	public void queueResubContent(String userId, String siteId, String taskId, String contentId, String submissionId)
+		throws QueueException {
+	
+		log.debug("Method called queueContent(" + userId + "," + siteId + "," + contentId + ")");
+
+		if (userId == null) {
+			log.debug("Using current user");
+			userId = userDirectoryService.getCurrentUser().getId();
+		}
+
+		if (siteId == null) {
+			log.debug("Using current site");
+			siteId = toolManager.getCurrentPlacement().getContext();
+		}
+
+		if (taskId == null) {
+			log.debug("Generating default taskId");
+			taskId = siteId + " " + defaultAssignmentName;
+		}
+
+		log.debug("Adding content: " + contentId + " from site " + siteId
+					+ " and user: " + userId + " for task: " + taskId + " to submission queue");
+
+		/*
+		 * first check that this content has not been submitted before this may
+		 * not be the best way to do this - perhaps use contentId as the primary
+		 * key for now id is the primary key and so the database won't complain
+		 * if we put in repeats necessitating the check
+		 */
+
+		List<ContentReviewItem> existingItems = getItemsByContentId(contentId);
+		if (existingItems.size() > 0) {
+			throw new QueueException("Content " + contentId + " is already queued, not re-queued");
+		}
+		ContentReviewItem item = new ContentReviewItem(userId, siteId, taskId, contentId, new Date(),
+			ContentReviewItem.NOT_SUBMITTED_CODE);
+		item.setNextRetryTime(new Date());
+		item.setUrlAccessed(false);
+		item.setSubmissionId(submissionId);
+		item.setResubmission(true);
 		dao.save(item);
 	}
 
-	private List<ContentReviewItem> getItemsByContentId(String contentId) {
+	protected List<ContentReviewItem> getItemsByContentId(String contentId) {
 		Search search = new Search();
 		search.addRestriction(new Restriction("contentId", contentId));
 		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
 		return existingItems;
+	}
+	
+	public ContentReviewItem getFirstItemByContentId(String contentId) {
+		Search search = new Search();
+		search.addRestriction(new Restriction("contentId", contentId));
+		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if (existingItems.size() == 0) {
+			log.debug("Content " + contentId + " has not been queued previously");
+			return null;
+		}
+
+		if (existingItems.size() > 1){
+			log.warn("More than one matching item - using first item found");
+		}
+
+		return existingItems.get(0);
+	}
+	
+	public ContentReviewItem getItemById(String id) {
+		Search search = new Search();
+		search.addRestriction(new Restriction("id", Long.valueOf(id)));
+		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if (existingItems.size() == 0) {
+			log.debug("Content " + id + " has not been queued previously");
+			return null;
+		}
+
+		if (existingItems.size() > 1){
+			log.warn("More than one matching item - using first item found");
+		}
+
+		return existingItems.get(0);
 	}
 	
 	public int getReviewScore(String contentId)
@@ -268,7 +386,7 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 	}
 
 	public boolean isSiteAcceptable(Site s) {
-		return siteAdvisor.siteCanUseReviewService(s);
+		throw new UnsupportedOperationException("Not implemented");
 	}
 	
 
@@ -310,15 +428,41 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 	public boolean isAcceptableContent(ContentResource resource) {
 		throw new UnsupportedOperationException("This is not yet implemented");
 	}
+	
+	public boolean isAcceptableSize(ContentResource resource) {
+		throw new UnsupportedOperationException("Not implemented");
+	}
 
 	public void processQueue() {
 		// TODO Auto-generated method stub
 		
 	}
 
+	public boolean updateItemAccess(String contentId){
+		ContentReviewItem cri = getFirstItemByContentId(contentId);
+		if(cri != null){
+			cri.setUrlAccessed(true);
+			dao.update(cri);
+			return true;
+		}
+		return false;
+	}
+		
+	public boolean updateExternalGrade(String contentId, String score){
+		ContentReviewItem cri = getFirstItemByContentId(contentId);
+		if(cri != null){
+			cri.setExternalGrade(score);
+			dao.update(cri);
+			return true;
+		}
+		return false;
+	}
 	
-
-
-	
-
+	public String getExternalGradeForContentId(String contentId){
+		ContentReviewItem cri = getFirstItemByContentId(contentId);
+		if(cri != null){
+			return cri.getExternalGrade();
+		}
+		return null;
+	}
 }

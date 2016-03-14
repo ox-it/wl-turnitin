@@ -102,22 +102,46 @@
             <artifactId>sakai-common-type-api</artifactId>
         </dependency>
 
+		<dependency>
+			<groupId>org.sakaiproject.basiclti</groupId>
+			<artifactId>basiclti-util</artifactId>
+			<!--<version>${sakai.basiclti.version}</version>-->
+			<version>10-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.sakaiproject.basiclti</groupId>
+			<artifactId>basiclti-api</artifactId>
+			<!--<version>${sakai.basiclti.version}</version>-->
+			<version>10-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+            <groupId>org.sakaiproject.assignment</groupId>
+            <artifactId>sakai-assignment-api</artifactId>
+        </dependency>
+		
         <!-- Apache commons dependencies -->
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
              <scope>provided</scope>
         </dependency>
-	<dependency>
-		<groupId>org.apache.poi</groupId>
-		<artifactId>poi</artifactId>
-		<version>3.8</version>
-	</dependency>
-	<dependency>
-		<groupId>org.apache.poi</groupId>
-		<artifactId>poi-scratchpad</artifactId>
-		<version>3.8</version>
-	</dependency>
+		<dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+        </dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.8</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-scratchpad</artifactId>
+			<version>3.8</version>
+		</dependency>
 
         <!-- PonderUtilCore for StreamUtils -->
         <dependency>
@@ -168,10 +192,26 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>easymock</groupId>
+            <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
-            <version>1.2_Java1.3</version>
+            <version>2.4</version>
             <scope>test</scope>
+        </dependency>
+		<dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>1.9.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.sakaiproject.mock</groupId>
+            <artifactId>sakai-mock</artifactId>
+            <scope>test</scope>
+        </dependency>
+		<dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+			<scope>test</scope>
         </dependency>
         <dependency>
         	<groupId>commons-lang</groupId>
@@ -203,6 +243,11 @@
         <dependency>
             <groupId>org.sakaiproject.edu-services.gradebook</groupId>
             <artifactId>gradebook-service-api</artifactId>
+        </dependency>
+		<dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+			<version>20140107</version>
         </dependency>
     </dependencies>
 

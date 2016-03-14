@@ -18,15 +18,45 @@
  * limitations under the License.
  *
  **********************************************************************************/
-package org.sakaiproject.contentreview.impl.adivisors;
+package org.sakaiproject.contentreview.impl.advisors;
 
 import org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor;
+import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.site.api.Site;
 
-public class DefaultSiteAdvisor implements ContentReviewSiteAdvisor {
+public class SitePropertyAdvisor implements ContentReviewSiteAdvisor {
 
-	public boolean siteCanUseReviewService(Site site) {
-		return true;
+	private String siteProperty;
+	public void setSiteProperty(String p){
+		siteProperty = p;
+	}
+	
+	private String siteLTIProperty;
+	public void setSiteLTIProperty(String p){
+		siteLTIProperty = p;
+	}
+	
+	private String siteDirectSubmissionProperty;
+	public void setSiteDirectSubmissionProperty(String p){
+		siteDirectSubmissionProperty = p;
+	}
+	
+	public boolean siteCanUseReviewService(Site site) {		
+		ResourceProperties properties = site.getProperties();		
+		String prop = properties.getProperty(siteProperty);
+		return Boolean.valueOf(prop).booleanValue();
+	}
+	
+	public boolean siteCanUseLTIReviewService(Site site) {
+		ResourceProperties properties = site.getProperties();		
+		String prop = properties.getProperty(siteLTIProperty);
+		return Boolean.valueOf(prop).booleanValue();
+	}
+	
+	public boolean siteCanUseLTIDirectSubmission(Site site){
+		ResourceProperties properties = site.getProperties();		
+		String prop = properties.getProperty(siteDirectSubmissionProperty);
+		return Boolean.valueOf(prop).booleanValue();
 	}
 
 }

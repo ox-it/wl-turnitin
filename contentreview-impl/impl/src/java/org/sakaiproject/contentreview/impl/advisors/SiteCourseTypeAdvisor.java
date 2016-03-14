@@ -18,7 +18,7 @@
  * limitations under the License.
  *
  **********************************************************************************/
-package org.sakaiproject.contentreview.impl.adivisors;
+package org.sakaiproject.contentreview.impl.advisors;
 
 import org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor;
 import org.sakaiproject.site.api.Site;
@@ -34,6 +34,21 @@ public class SiteCourseTypeAdvisor implements ContentReviewSiteAdvisor {
 		}
 		return false;
 		
+	}
+	
+	public boolean siteCanUseLTIReviewService(Site site) {
+		String type = site.getType();
+		
+		if (type != null ) {
+			if (type.equals("course"))
+				return true;
+		}
+		return false;
+		
+	}
+	
+	public boolean siteCanUseLTIDirectSubmission(Site site) {
+		return false;		
 	}
 
 }

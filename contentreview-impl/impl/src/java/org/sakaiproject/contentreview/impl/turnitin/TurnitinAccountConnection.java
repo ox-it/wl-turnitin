@@ -25,7 +25,6 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -227,133 +226,6 @@ public class TurnitinAccountConnection {
 		return togo;
 	}
 
-	/**
-	 * This will return a map of the information for the instructor such as
-	 * uem, username, ufn, etc. If the system is configured to use src9
-	 * provisioning, this will draw information from the current thread based
-	 * user. Otherwise it will use the default Instructor information that has
-	 * been configured for the system.
-	 *
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	public Map getInstructorInfo(String siteId) {
-		Map togo = new HashMap();
-		if (!useSourceParameter) {
-			togo.put("uem", defaultInstructorEmail);
-			togo.put("ufn", defaultInstructorFName);
-			togo.put("uln", defaultInstructorLName);
-			togo.put("uid", defaultInstructorId);
-		}
-		else {
-			String INST_ROLE = "section.role.instructor";
-			User inst = null;
-			try {
-				Site site = siteService.getSite(siteId);
-				User user = userDirectoryService.getCurrentUser();
-				if (site.isAllowed(user.getId(), INST_ROLE)) {
-					inst = user;
-				}
-				else {
-					Set<String> instIds = getActiveInstructorIds(INST_ROLE,
-							site);
-					if (instIds.size() > 0) {
-						inst = userDirectoryService.getUser((String) instIds.toArray()[0]);
-					}
-				}
-			} catch (IdUnusedException e) {
-				log.error("Unable to fetch site in getAbsoluteInstructorInfo: " + siteId, e);
-			} catch (UserNotDefinedException e) {
-				log.error("Unable to fetch user in getAbsoluteInstructorInfo", e);
-			}
-
-
-			if (inst == null) {
-				log.error("Instructor is null in getAbsoluteInstructorInfo");
-			}
-			else {
-				togo.put("uem", inst.getEmail());
-				togo.put("ufn", inst.getFirstName());
-				togo.put("uln", inst.getLastName());
-				togo.put("uid", inst.getId());
-				togo.put("username", inst.getDisplayName());
-			}
-		}
-
-		return togo;
-	}
-
-@SuppressWarnings("unchecked")
-	public Map getInstructorInfo(String siteId, boolean ignoreUseSource) {
-		Map togo = new HashMap();
-		if (!useSourceParameter && ignoreUseSource == false ) {
-			togo.put("uem", defaultInstructorEmail);
-			togo.put("ufn", defaultInstructorFName);
-			togo.put("uln", defaultInstructorLName);
-			togo.put("uid", defaultInstructorId);
-		}
-		else {
-			String INST_ROLE = "section.role.instructor";
-			User inst = null;
-			try {
-				Site site = siteService.getSite(siteId);
-				User user = userDirectoryService.getCurrentUser();
-				if (site.isAllowed(user.getId(), INST_ROLE)) {
-					inst = user;
-				}
-				else {
-					Set<String> instIds = getActiveInstructorIds(INST_ROLE,
-							site);
-					if (instIds.size() > 0) {
-						inst = userDirectoryService.getUser((String) instIds.toArray()[0]);
-					}
-				}
-			} catch (IdUnusedException e) {
-				log.error("Unable to fetch site in getAbsoluteInstructorInfo: " + siteId, e);
-			} catch (UserNotDefinedException e) {
-				log.error("Unable to fetch user in getAbsoluteInstructorInfo", e);
-			}
-
-
-			if (inst == null) {
-				log.error("Instructor is null in getAbsoluteInstructorInfo");
-			}
-			else {
-				togo.put("uem", inst.getEmail());
-				togo.put("ufn", inst.getFirstName());
-				togo.put("uln", inst.getLastName());
-				togo.put("uid", inst.getId());
-				togo.put("username", inst.getDisplayName());
-			}
-		}
-
-		return togo;
-	}
-
-	private Set<String> getActiveInstructorIds(String INST_ROLE, Site site) {
-		Set<String> instIds = site.getUsersIsAllowed(INST_ROLE);
-		//the site could contain references to deleted users
-		List<User> activeUsers = userDirectoryService.getUsers(instIds);
-		Set<String> ret =  new HashSet<String>();
-		for (int i = 0; i < activeUsers.size(); i++) {
-			User user = activeUsers.get(i);
-			//Checks that the user has the required attributes to be a registered instructor.
-			if(user.getEmail() != null && user.getFirstName() != null && user.getLastName() != null)
-				ret.add(user.getId());
-		}
-
-		return ret;
-	}
-
-	public String getTEM(String cid) {
-		if (useSourceParameter) {
-			//return cid + "_" + this.aid + "@tiisakai.com";
-			return getInstructorInfo(cid).get("uem").toString();
-		} else {
-			return defaultInstructorEmail;
-		}
-	}
-
 	public Map callTurnitinReturnMap(Map params) throws TransientSubmissionException, SubmissionException {
 		return TurnitinAPIUtil.callTurnitinReturnMap(apiURL, params, secretKey, turnitinConnTimeout, proxy);
 	}
@@ -475,5 +347,21 @@ public class TurnitinAccountConnection {
 
 	public void setInstructorAccountNotified(boolean instructorAccountNotified) {
 		this.instructorAccountNotified = instructorAccountNotified;
+	}
+	
+	public String getDefaultInstructorEmail() {
+		return defaultInstructorEmail;
+	}
+
+  	public String getDefaultInstructorFName() {
+		return defaultInstructorFName;
+	}
+
+  	public String getDefaultInstructorLName() {
+		return defaultInstructorLName;
+	}
+
+  	public String getDefaultInstructorId() {
+		return defaultInstructorId;
 	}
 }

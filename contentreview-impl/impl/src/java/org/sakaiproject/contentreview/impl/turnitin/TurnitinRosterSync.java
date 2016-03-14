@@ -31,6 +31,7 @@ import org.sakaiproject.contentreview.dao.impl.ContentReviewDao;
 import org.sakaiproject.contentreview.exception.SubmissionException;
 import org.sakaiproject.contentreview.exception.TransientSubmissionException;
 import org.sakaiproject.contentreview.model.ContentReviewRosterSyncItem;
+import org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.genericdao.api.search.Order;
 import org.sakaiproject.genericdao.api.search.Restriction;
@@ -62,6 +63,11 @@ public class TurnitinRosterSync {
 	private TurnitinReviewServiceImpl turnitinReviewServiceImpl;
 	public void setTurnitinReviewServiceImpl(TurnitinReviewServiceImpl turnitinReviewServiceImpl) {
 		this.turnitinReviewServiceImpl = turnitinReviewServiceImpl;
+	}
+	
+	private ContentReviewSiteAdvisor contentReviewSiteAdvisor;
+	public void setContentReviewSiteAdvisor(ContentReviewSiteAdvisor contentReviewSiteAdvisor) {
+		this.contentReviewSiteAdvisor = contentReviewSiteAdvisor;
 	}
 
 	private SiteService siteService;
@@ -102,7 +108,7 @@ public class TurnitinRosterSync {
 	 * @return
 	 */
 	public Document getEnrollmentDocument(String sakaiSiteID) {
-		Map instinfo = turnitinConn.getInstructorInfo(sakaiSiteID);
+		Map instinfo = turnitinReviewServiceImpl.getInstructorInfo(sakaiSiteID);
 
 		Map params = TurnitinAPIUtil.packMap(null,
 				"fid","19",
@@ -194,7 +200,7 @@ public class TurnitinRosterSync {
 			params.putAll(TurnitinAPIUtil.packMap(turnitinConn.getBaseTIIOptions(),
 					"fid","19","fcmd", "3", "ctl", siteId, "cid", siteId,
 					"utp", currentRole+"",
-					"tem", turnitinConn.getInstructorInfo(siteId).get("uem")));
+					"tem", turnitinReviewServiceImpl.getInstructorInfo(siteId).get("uem")));
 
 			Map ret = new HashMap();
 			try {
@@ -375,6 +381,10 @@ public class TurnitinRosterSync {
 			throw new IllegalArgumentException("The Sakai Site with ID: " + sakaiSiteID + " does not exist.");
 		}
 
+		if(contentReviewSiteAdvisor.siteCanUseLTIReviewService(site)){
+			return false;
+		}
+		
 		//Only run if using SRC 9
 		if(turnitinConn.isUseSourceParameter()){
 			//Enroll all instructors
