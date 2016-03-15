@@ -141,11 +141,13 @@ public class TurnitinContentValidator {
 
 				String extension = fileName.substring(fileName.lastIndexOf("."));
 				log.debug("file has an extension of " + extension);
-				if (extension.equals(".doc") || extension.equals(".wpd") || extension.equals(".eps") 
-						||  extension.equals(".txt") || extension.equals(".htm") || extension.equals(".html") 
-						|| extension.equals(".pdf") || extension.equals(".docx") || ".rtf".equals(extension))
+				if (extension.equals(".doc") || extension.equals(".wpd") || extension.equals(".eps") || extension.equals(".ps") 
+						|| extension.equals(".txt") || extension.equals(".htm") || extension.equals(".html") || extension.equals(".odt") 
+						|| extension.equals(".pdf") || extension.equals(".docx") || ".rtf".equals(extension) || ".hwp".equals(extension)
+						|| extension.equals(".ppt") || extension.equals(".pptx") || extension.equals(".ppsx") || extension.equals(".pps")){
 					fileTypeOk = true;
-
+				}
+				
 			} else {
 				//we don't know what this is so lets submit it anyway
 				fileTypeOk = true;
