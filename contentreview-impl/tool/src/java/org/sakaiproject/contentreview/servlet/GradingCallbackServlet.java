@@ -155,7 +155,7 @@ public class GradingCallbackServlet extends HttpServlet {
 					return;
 				}
 				float convertedScore = Float.valueOf(score)*maxPoints;
-				String convertedScoreString = String.format("%.1f", convertedScore);
+				String convertedScoreString = String.format("%.0f", convertedScore);
 				M_log.debug("Maximum points: " + maxPoints + " - converted score: " + convertedScoreString);
 				
 				M_log.debug("cri " + cri.getId() + " - " + cri.getContentId());
