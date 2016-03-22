@@ -3255,6 +3255,8 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 				return method + ": other LTI error";
 			case -6:
 				return method + ": error while submitting (XML response)";
+			case -9:
+				return method + ": TII global LTI tool doesn't exist or properties are wrongly configured";
 			default:
 				return method + ": generic LTI error";
 		}
