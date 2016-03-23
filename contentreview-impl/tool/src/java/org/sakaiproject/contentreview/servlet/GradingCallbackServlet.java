@@ -175,7 +175,8 @@ public class GradingCallbackServlet extends HttpServlet {
 							String assignmentGrade = ase.getGrade();
 							if(StringUtils.isEmpty(assignmentGrade)){
 								M_log.debug("Setting external grade as assignments grade");
-								ase.setGrade(convertedScoreString);								
+								convertedScoreString = String.format("%.1f", convertedScore);//TODO on trunk more than one decimal is possible
+								ase.setGrade(convertedScoreString);
 							} else {
 								M_log.debug("Flagging submission");
 								ase.setExternalGradeDifferent(Boolean.TRUE.booleanValue());
