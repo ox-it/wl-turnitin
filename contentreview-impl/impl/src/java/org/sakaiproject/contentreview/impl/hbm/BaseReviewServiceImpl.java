@@ -33,6 +33,7 @@ import org.sakaiproject.contentreview.exception.SubmissionException;
 import org.sakaiproject.contentreview.model.ContentReviewItem;
 import org.sakaiproject.contentreview.service.ContentReviewService;
 import org.sakaiproject.contentreview.service.ContentReviewSiteAdvisor;
+import org.sakaiproject.genericdao.api.search.Order;
 import org.sakaiproject.genericdao.api.search.Restriction;
 import org.sakaiproject.genericdao.api.search.Search;
 import org.sakaiproject.site.api.Site;
@@ -212,6 +213,25 @@ public abstract class BaseReviewServiceImpl implements ContentReviewService {
 		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
 		if (existingItems.size() == 0) {
 			log.debug("Content " + contentId + " has not been queued previously");
+			return null;
+		}
+
+		if (existingItems.size() > 1){
+			log.warn("More than one matching item - using first item found");
+		}
+
+		return existingItems.get(0);
+	}
+	
+	public ContentReviewItem getFirstItemByExternalId(String externalId) {
+		//due to the impossibility to get the right paper id from the turnitin callback
+		//we need to get the paper id associated to the original submission
+		Search search = new Search();
+		search.addRestriction(new Restriction("externalId", externalId));
+		search.addOrder(new Order("id", false));
+		List<ContentReviewItem> existingItems = dao.findBySearch(ContentReviewItem.class, search);
+		if (existingItems.size() == 0) {
+			log.debug("Content with paper id " + externalId + " has not been queued previously");
 			return null;
 		}
 
