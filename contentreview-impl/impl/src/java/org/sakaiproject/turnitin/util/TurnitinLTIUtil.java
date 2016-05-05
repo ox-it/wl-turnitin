@@ -124,8 +124,13 @@ public class TurnitinLTIUtil {
 				return -3;
 			} else if(statusCode == 200){
 				log.debug("Status 200: OK request: " + defUrl);
-				log.debug("LTI props " + ltiProps.toString());
-				log.debug(method.getResponseBodyAsString());
+				if(method.getResponseBodyAsString().contains("api_errorblock")){//TODO only way unless TII returns xml response
+					log.warn("LTI props " + ltiProps.toString());
+					log.warn(method.getResponseBodyAsString());
+				} else {
+					log.debug("LTI props " + ltiProps.toString());
+					log.debug(method.getResponseBodyAsString());
+				}
 				if(type == SUBMIT || type == RESUBMIT){
 					boolean result = parseSubmissionXMLResponse(method.getResponseBodyAsString());
 					if(!result){
