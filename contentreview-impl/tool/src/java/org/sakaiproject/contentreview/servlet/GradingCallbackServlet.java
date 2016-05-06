@@ -136,6 +136,10 @@ public class GradingCallbackServlet extends HttpServlet {
 			ContentReviewItem cri = contentReviewService.getFirstItemByContentId(sourcedId);
 			if(cri == null){
 				M_log.debug("Could not find the content review item for content " + sourcedId);
+				cri = contentReviewService.getFirstItemByExternalId(sourcedId);
+			}
+			if(cri == null){
+				M_log.warn("Could not find the content review item for paper id " + sourcedId);
 				return;
 			} else {
 				Assignment a = AssignmentService.getAssignment(cri.getTaskId());
