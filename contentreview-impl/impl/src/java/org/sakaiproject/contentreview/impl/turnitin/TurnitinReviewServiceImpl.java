@@ -1833,6 +1833,7 @@ public class TurnitinReviewServiceImpl extends BaseReviewServiceImpl {
 					}
 					if(tiiPaperId != null){
 						log.debug("This content has associated the following TII id: " + tiiPaperId);
+						currentItem.setExternalId(tiiPaperId);
 						result = tiiUtil.makeLTIcall(tiiUtil.RESUBMIT, tiiPaperId, ltiProps);
 					} else {//normal submission?
 						log.debug("doing a submission instead");
