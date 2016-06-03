@@ -74,4 +74,57 @@ When submissions are made against Turnitin callback URLs are supplied, by defaul
 extract the hostname that callbacks should be made against. As a developer this is typically localhost or some VM which
 means that the callback URLs would not be resolvable by Turnitin. To get around this you can use a tool such as
 https://ngrok.com/ which allows you to expose ports. However if you do this, you then need to access Sakai through this
-published URL when testing and also set the `serverUrl` in the `sakai.properties` to the custom ngrok endpoint. 
+published URL when testing and also set the `serverUrl` in the `sakai.properties` to the custom ngrok endpoint.
+
+
+SETUP
+-----
+
+Quartz Jobs
+-----------
+
+Remembers to set up Quartz job
+
+        * Content Review Queue
+        * Content Review Reports
+
+you will have to run jobs manually unless they're set up to auto-run.
+
+LTI Tool Config
+---------------
+
+Add an LTI tool via Admin Workspace > External Tools. The configuration for the tool in production should be
+
+        * Site ID: !turnitin
+        * Tool Title: Turnitin
+        * Allow tool title to be changed
+        * Set Button Text - Turnitin
+        * Do not allow button text to be changed
+        * Description - optional
+        * Tool status: Enabled
+        * Tool visibility: stealthed
+        * Launch URL - https://api.turnitinuk.com/api/lti/1p0/assignment or equivalent for the US, Spain etc.
+        * Do not allow URL to be changed
+        * Tool Key - ????
+        * Do not allow Launch Key to be changed
+        * Secret - ??Get via Turnitin web site??
+        * Do not allow Launch Secret to be changed
+        * Do not allow frame height to be changed
+        * Open in a New Windows - checked.
+        * Send Names to the External Tool - checked.
+        * Send Email Addresses to the External Tool. - checked.
+        * Allow External Tool to return grades - checked.
+        * Never Launch in pop-up
+        * (In production) Never launch in debug mode
+        * Allow additional custom parameters
+
+and on a dev / test environment (which points at the sandbox server)
+
+        * Site ID: !turnitin
+        * Launch URL - https://sandbox.turnitin.com/api/lti/1p0/assignment
+        * Tool Key - ????
+        * Secret - ??Get via Turnitin web site??
+
+Other settings are as for the production service.
+
+More details at: http://turnitin.com/en_us/support/integrations/lti/
