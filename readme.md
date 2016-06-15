@@ -93,7 +93,8 @@ you will have to run jobs manually unless they're set up to auto-run.
 LTI Tool Config
 ---------------
 
-Add an LTI tool via Admin Workspace > External Tools. The configuration for the tool in production should be
+Add an LTI tool via Admin Workspace > External Tools, the configuration for the tool in production is given below. 
+Please note, **do not create a site with ID '!turnitin'** as this will prevent the integration from working correctly; the '!turnitin' site ID is simply used as a form of "reserved namespace".
 
         * Site ID: !turnitin
         * Tool Title: Turnitin
