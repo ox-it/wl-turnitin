@@ -26,6 +26,7 @@
 		<module>pack</module>
 		<module>scheduler-jobs</module>
 		<module>tool</module>
+		<module>turnitin-api</module>
 	</modules>
 	<issueManagement>
 		<system>jira</system>
@@ -57,6 +58,12 @@
 				<groupId>org.sakaiproject.contentreview</groupId>
 				<artifactId>contentreview-service-api</artifactId>
 				<version>${sakai.version}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.sakaiproject.contentreview</groupId>
+				<artifactId>contentreview-turnitin-api</artifactId>
+				<version>${project.version}</version>
 				<scope>provided</scope>
 			</dependency>
 			<!-- internal dependencies -->

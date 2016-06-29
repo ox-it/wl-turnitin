@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.sakaiproject.turnitin.api.TurnitinLTIAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -50,6 +51,7 @@ public class GradingCallbackServlet extends HttpServlet {
 	
 	private ContentReviewService contentReviewService;
 	private LTIService ltiService;
+	private TurnitinLTIAPI turnitinLTIAPI;
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
@@ -58,6 +60,8 @@ public class GradingCallbackServlet extends HttpServlet {
 		Objects.requireNonNull(contentReviewService);
 		ltiService = (LTIService) ComponentManager.get(LTIService.class);
 		Objects.requireNonNull(ltiService);
+		turnitinLTIAPI = (TurnitinLTIAPI) ComponentManager.get(TurnitinLTIAPI.class);
+		Objects.requireNonNull(turnitinLTIAPI);
 		super.init(config);
 	}
 	
@@ -102,15 +106,9 @@ public class GradingCallbackServlet extends HttpServlet {
 		if ( poxRequest.valid ) {
 			M_log.debug(poxRequest.getPostBody());
 		}
-		
-		String turnitinSite = ServerConfigurationService.getString("turnitin.lti.site", "!turnitin");
-		Map<String,Object> tiiData = ServletUtils.obtainGlobalTurnitinLTITool(turnitinSite);
-		if(tiiData == null){
-			M_log.error("Turnitin global LTI tool does not exist or properties are wrongly configured.");
-			return;
-		}
-		String key = String.valueOf(tiiData.get(LTIService.LTI_CONSUMERKEY));
-		String secret = String.valueOf(tiiData.get(LTIService.LTI_SECRET));
+
+		String key = turnitinLTIAPI.getGlobalKey();
+		String secret = turnitinLTIAPI.getGlobalSecret();
 		
 		// Lets check the signature
 		if ( key == null || secret == null ) {

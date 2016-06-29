@@ -25,6 +25,7 @@ import org.sakaiproject.entity.api.ResourcePropertiesEdit;
 import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.tool.cover.SessionManager;
+import org.sakaiproject.turnitin.api.TurnitinLTIAPI;
 
 /** 
  * This servlet will receive callbacks from TII. Then it will process the data
@@ -37,12 +38,16 @@ public class TIICallbackServlet extends HttpServlet {
 	private static Log M_log = LogFactory.getLog(TIICallbackServlet.class);
 	
 	private LTIService ltiService;
+	private TurnitinLTIAPI turnitinLTIAPI;
 	
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		M_log.debug("init TIICallbackServlet");
 		ltiService = (LTIService) ComponentManager.get(LTIService.class);
 		Objects.requireNonNull(ltiService);
+		turnitinLTIAPI = (TurnitinLTIAPI)ComponentManager.get(TurnitinLTIAPI.class);
+		Objects.requireNonNull(turnitinLTIAPI);
+
 		super.init(config);
 	}
 	
@@ -92,7 +97,8 @@ public class TIICallbackServlet extends HttpServlet {
 		String turnitinSite = ServerConfigurationService.getString("turnitin.lti.site", "!turnitin");
 		Map<String,Object> tiiData = ServletUtils.obtainGlobalTurnitinLTITool(turnitinSite);
 		if(tiiData == null){
-			M_log.error("Turnitin global LTI tool does not exist or properties are wrongly configured.");
+			doErrorJSON(request, response, jsonRequest,
+				"Turnitin global LTI tool does not exist or properties are wrongly configured.", null);
 			return;
 		}
 		String key = String.valueOf(tiiData.get(LTIService.LTI_CONSUMERKEY));
