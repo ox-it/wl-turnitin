@@ -95,14 +95,8 @@ public class TIICallbackServlet extends HttpServlet {
 		}
 		
 		String turnitinSite = ServerConfigurationService.getString("turnitin.lti.site", "!turnitin");
-		Map<String,Object> tiiData = ServletUtils.obtainGlobalTurnitinLTITool(turnitinSite);
-		if(tiiData == null){
-			doErrorJSON(request, response, jsonRequest,
-				"Turnitin global LTI tool does not exist or properties are wrongly configured.", null);
-			return;
-		}
-		String key = String.valueOf(tiiData.get(LTIService.LTI_CONSUMERKEY));
-		String secret = String.valueOf(tiiData.get(LTIService.LTI_SECRET));
+		String key = turnitinLTIAPI.getGlobalKey();
+		String secret = turnitinLTIAPI.getGlobalSecret();
 		
 		// Lets check the signature
 		if ( key == null || secret == null ) {
