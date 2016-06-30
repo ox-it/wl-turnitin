@@ -1,6 +1,7 @@
 package org.sakaiproject.contentreview.servlet;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.servlet.ServletConfig;
@@ -25,8 +26,10 @@ import org.sakaiproject.contentreview.model.ContentReviewItem;
 import org.sakaiproject.contentreview.service.ContentReviewService;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
 import org.sakaiproject.event.cover.NotificationService;
+import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.tool.cover.SessionManager;
+import org.sakaiproject.turnitin.api.TurnitinLTIAPI;
 
 /** 
  * This servlet will receive callbacks from TII. Then it will process the data
@@ -39,12 +42,18 @@ public class SubmissionCallbackServlet extends HttpServlet {
 	private static Log M_log = LogFactory.getLog(SubmissionCallbackServlet.class);
 	
 	private ContentReviewService contentReviewService;
+	private LTIService ltiService;
+	private TurnitinLTIAPI turnitinLTIAPI;
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		M_log.debug("init SubmissionCallbackServlet");
 		contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class);
 		Objects.requireNonNull(contentReviewService);
+		ltiService = (LTIService) ComponentManager.get(LTIService.class);
+		Objects.requireNonNull(ltiService);
+		turnitinLTIAPI = (TurnitinLTIAPI) ComponentManager.get(TurnitinLTIAPI.class);
+		Objects.requireNonNull(turnitinLTIAPI);
 		super.init(config);
 	}
 	
@@ -90,9 +99,9 @@ public class SubmissionCallbackServlet extends HttpServlet {
 		if ( jsonRequest.valid ) {
 			M_log.debug(jsonRequest.getPostBody());
 		}
-		
-		String key = ServerConfigurationService.getString("turnitin.aid");
-		String secret = ServerConfigurationService.getString("turnitin.secretKey");
+
+		String key = turnitinLTIAPI.getGlobalKey();
+		String secret = turnitinLTIAPI.getGlobalSecret();
 		
 		// Lets check the signature
 		if ( key == null || secret == null ) {

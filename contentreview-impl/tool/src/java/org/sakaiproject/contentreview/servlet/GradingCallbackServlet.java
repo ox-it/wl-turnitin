@@ -2,6 +2,7 @@ package org.sakaiproject.contentreview.servlet;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.servlet.ServletConfig;
@@ -18,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.sakaiproject.turnitin.api.TurnitinLTIAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -33,6 +35,7 @@ import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
 import org.sakaiproject.contentreview.model.ContentReviewItem;
 import org.sakaiproject.contentreview.service.ContentReviewService;
+import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.tool.cover.SessionManager;
 
@@ -47,12 +50,18 @@ public class GradingCallbackServlet extends HttpServlet {
 	private static Log M_log = LogFactory.getLog(GradingCallbackServlet.class);
 	
 	private ContentReviewService contentReviewService;
+	private LTIService ltiService;
+	private TurnitinLTIAPI turnitinLTIAPI;
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		M_log.debug("init GradingCallbackServlet");
 		contentReviewService = (ContentReviewService) ComponentManager.get(ContentReviewService.class);
 		Objects.requireNonNull(contentReviewService);
+		ltiService = (LTIService) ComponentManager.get(LTIService.class);
+		Objects.requireNonNull(ltiService);
+		turnitinLTIAPI = (TurnitinLTIAPI) ComponentManager.get(TurnitinLTIAPI.class);
+		Objects.requireNonNull(turnitinLTIAPI);
 		super.init(config);
 	}
 	
@@ -97,9 +106,9 @@ public class GradingCallbackServlet extends HttpServlet {
 		if ( poxRequest.valid ) {
 			M_log.debug(poxRequest.getPostBody());
 		}
-		
-		String key = ServerConfigurationService.getString("turnitin.aid");
-		String secret = ServerConfigurationService.getString("turnitin.secretKey");
+
+		String key = turnitinLTIAPI.getGlobalKey();
+		String secret = turnitinLTIAPI.getGlobalSecret();
 		
 		// Lets check the signature
 		if ( key == null || secret == null ) {
@@ -125,6 +134,7 @@ public class GradingCallbackServlet extends HttpServlet {
 			Element doc = document.getDocumentElement();
 			sourcedId = doc.getElementsByTagName("sourcedId").item(0).getChildNodes().item(0).getNodeValue();
 			String score = doc.getElementsByTagName("textString").item(0).getChildNodes().item(0).getNodeValue();//catched exception if textString is null
+			//TODO if they remove grade it's considered as an exception and sakai external grade is not updated
 			M_log.debug("sourcedId " + sourcedId + ", score " + score);
 
 			Session session = SessionManager.getCurrentSession();
