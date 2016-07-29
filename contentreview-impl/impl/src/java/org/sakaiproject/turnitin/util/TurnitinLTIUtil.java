@@ -124,9 +124,12 @@ public class TurnitinLTIUtil implements TurnitinLTIAPI {
 			}
 			
 			int statusCode = client.executeMethod(method);
-			if(statusCode == 400){
+			if(statusCode == 400) {
 				log.warn("Status 400: Bad request: " + defUrl);
 				log.warn("LTI props " + ltiProps.toString());
+				return -3;
+			} else if (statusCode == 401) {
+				log.warn("Status "+ statusCode+ " - "+ method.getStatusText()+ " URL: "+ defUrl+ " LTI props: "+ ltiProps);
 				return -3;
 			} else if(statusCode == 200){
 				log.debug("Status 200: OK request: " + defUrl);
