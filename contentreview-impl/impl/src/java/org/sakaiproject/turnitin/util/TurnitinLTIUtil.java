@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.json.JSONObject;
+import org.sakaiproject.basiclti.util.SakaiBLTIUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -206,7 +207,7 @@ public class TurnitinLTIUtil implements TurnitinLTIAPI {
 		log.debug("Global tool id: " + globalId);
 		aid = String.valueOf(tool.get(ltiService.LTI_CONSUMERKEY));
 		log.debug("Global tool key: " + aid);
-		secret = String.valueOf(tool.get(ltiService.LTI_SECRET));
+		secret = SakaiBLTIUtil.decryptSecret(String.valueOf(tool.get(ltiService.LTI_SECRET)));
 		log.debug("Global tool secret: " + secret);
 		if(globalId == null || aid == null || secret == null){
 			return false;
